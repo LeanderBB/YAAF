@@ -27,6 +27,6 @@ signed integer.
 Future work
 -----------
 * Multithread compression and decompression in yaafcl
-* Support for builds on Android and iSO
+* Support for builds on Android and iOS (32bit and 64bit)
 * Support for builds with mingw on Windows
 * TLS for thread specific error messages in libYAAF
