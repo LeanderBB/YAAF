@@ -75,6 +75,20 @@ check_include_files(malloc.h YAAF_HAVE_MALLOC_H)
 # check mmap.h
 check_include_files(sys/mman.h YAAF_HAVE_MMAN_H)
 
+# check pthread.h
+check_include_files(pthread.h YAAF_HAVE_PTHREAD_H)
+
+# check windows.h
+check_include_files(windows.h YAAF_HAVE_WINDOWS_H)
+
+# find threads
+if(UNIX)
+  set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+endif()
+
+find_package(Threads REQUIRED)
+
+
 ################################################################################
 # LIB Settings
 ################################################################################
@@ -116,9 +130,12 @@ set(YAAF_SRC
   src/YAAF_File.c
   src/YAAF_Internal.c
   src/YAAF_MemFile.c
+  src/YAAF_TLS.c
 )
 
 add_library(${YAAF_LIB_NAME} ${YAAF_SRC} ${YAAF_HDR} ${YAAF_INTERNAL_HDR})
+
+set(YAAF_LIBRARIES ${YAAF_LIB_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
 install(TARGETS ${YAAF_LIB_NAME} DESTINATION lib)
 install(FILES ${YAAF_HDR} DESTINATION include/YAAF)
