@@ -72,6 +72,9 @@ check_include_files(inttypes.h YAAF_HAVE_INTTYPES_H)
 # check malloc.h
 check_include_files(malloc.h YAAF_HAVE_MALLOC_H)
 
+# check mmap.h
+check_include_files(sys/mman.h YAAF_HAVE_MMAN_H)
+
 ################################################################################
 # LIB Settings
 ################################################################################
@@ -104,7 +107,7 @@ set(YAAF_INTERNAL_HDR
   src/YAAF_Archive.h
   src/YAAF_File.h
   src/YAAF_Internal.h
-  src/YAAF_LZ4.h
+  src/YAAF_MemFile.h
 )
 
 
@@ -112,10 +115,7 @@ set(YAAF_SRC
   src/YAAF_Archive.c
   src/YAAF_File.c
   src/YAAF_Internal.c
-  src/YAAF_LZ4.c
-  src/3rdparty/lz4/lz4.c
-  src/3rdparty/lz4/lz4hc.c
-  src/3rdparty/xxhash/xxhash.c
+  src/YAAF_MemFile.c
 )
 
 add_library(${YAAF_LIB_NAME} ${YAAF_SRC} ${YAAF_HDR} ${YAAF_INTERNAL_HDR})
@@ -128,6 +128,6 @@ install(FILES ${YAAF_HDR} DESTINATION include/YAAF)
 
 
 if(NOT YAAF_EXCLUDE_TOOLS)
-add_subdirectory(tools/yaafcl)
+#add_subdirectory(tools/yaafcl)
 endif()
 

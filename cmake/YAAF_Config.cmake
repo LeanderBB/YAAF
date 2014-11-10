@@ -47,4 +47,6 @@
 
 #cmakedefine YAAF_HAVE_MALLOC_H @YAAF_HAVE_MALLOC_H@
 
+#cmakedefine YAAF_HAVE_MMAN_H @YAAF_HAVE_MMAN_H@
+
 #endif

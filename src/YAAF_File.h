@@ -33,23 +33,24 @@
 #define __YAAF_FILE_H__
 
 #include "YAAF.h"
-#include "YAAF_LZ4.h"
+#include "YAAF_Internal.h"
 
-#define YAAF_TEMP_BUFFER_SIZE 4096
 
 struct YAAF_File
 {
-  YAAF_LZ4DecodeBlockState lz4State;
+  const void* ptr;
   size_t nBytesRead;
   size_t nBytesDecoded;
   size_t nBytesUncompressed;
   size_t nBytesCompressed;
   size_t offsetAfterHeader;
-  char* pCache;
   uint32_t cacheOffset;
   uint32_t cacheSize;
+  char cache[YAAF_BLOCK_SIZE];
 };
 
-YAAF_File* YAAF_FileCreate(YAAF_Stream* pStream, const size_t offset,
-                           const size_t sizeCompressed, const size_t fileSize);
+YAAF_File* YAAF_FileCreate(const void* ptr,
+                           const size_t offset,
+                           const size_t sizeCompressed,
+                           const size_t fileSize);
 #endif

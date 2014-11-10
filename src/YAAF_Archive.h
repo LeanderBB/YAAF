@@ -33,7 +33,7 @@
 #define __YAAF_ARCHIVE_H__
 
 #include "YAAF.h"
-
+#include "YAAF_MemFile.h"
 /*
  * YAAF Archive layout
  * Each Manifest Entry is sorted alphabetically so that the
@@ -94,9 +94,9 @@ typedef struct YAAF_FileHeader
 
 struct YAAF_Archive
 {
-  struct YAAF_ManifestEntry** pEntries;
-  void* pManifestEntriesBlob;
-  size_t nEntries;
+  YAAF_MemFile memFile;
+  const YAAF_Manifest* pManifest;
+  const YAAF_ManifestEntry* pEntries;
 };
 
 #endif

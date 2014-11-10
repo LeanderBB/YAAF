@@ -23,7 +23,6 @@
 
 #include "YAAF.h"
 #include "YAAF_Archive.h"
-#include "YAAF_LZ4.h"
 #include "YAAFCL_StrUtil.h"
 #include "YAAF_Internal.h"
 

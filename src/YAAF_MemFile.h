@@ -29,66 +29,22 @@
  * You can contact the author at :
  * - YAAF source repository : http://www.github.com/LeanderBB/YAAF
  */
-#ifndef __YAAF_LZ4ENCODE_H__
-#define __YAAF_LZ4ENCODE_H__
+#ifndef __YAAF_MEMFILE_H__
+#define __YAAF_MEMFILE_H__
 
 #include "YAAF.h"
 
-
-
-typedef struct
+typedef struct YAAF_MemFile
 {
-  uint32_t hash;
-  uint32_t maxBlockSize;
-  uint32_t nBlocks;
-  uint64_t fileSize;
-  uint64_t compressedSize;
-} YAAF_LZ4EncodeInfo;
-
-int YAAF_LZ4Encode(YAAF_Stream* pInput, YAAF_Stream* pOutput, YAAF_LZ4EncodeInfo* pInfo);
+    const void * ptr;
+    size_t size;
+    int oshdl;
+} YAAF_MemFile;
 
 
-typedef struct
-{
-  uint32_t hash;
-  uint64_t nBytesDecoded;
-} YAAF_LZ4DecodeInfo;
+int YAAF_MemFileOpen(YAAF_MemFile* pFile,
+                     const char* path);
 
-int YAAF_LZ4Decode(YAAF_Stream* pInput, YAAF_Stream* pOutput, YAAF_LZ4DecodeInfo* pInfo);
-
-int YAAF_LZ4DecodeByBlock(YAAF_Stream* pInput, YAAF_Stream* pOutput, YAAF_LZ4DecodeInfo* pInfo);
-
-typedef struct
-{
-  YAAF_Stream* pInputStream;
-  char* outBuffer;
-  char* inBuffer;
-  char* outStart;
-  uint32_t maxBlockSize;
-  uint32_t inputSize;
-  uint32_t outputSize;
-} YAAF_LZ4DecodeBlockState;
-
-int YAAF_LZ4DecodeBlockStateInit(YAAF_LZ4DecodeBlockState* pState, int blockSizeId,
-                                 YAAF_Stream* pInputStream);
-
-void YAAF_LZ4DecodeBlockStateDestroy(YAAF_LZ4DecodeBlockState* pState);
-
-uint32_t YAAF_LZ4HeaderSize();
-
-#define YAAF_LZ4_DECODE_BLOCK_FAIL 0xFFFFFFFF
-
-/*   0                          - End Of Stream
- *   YAAF_LZ4_DECODE_BLOCK_FAIL - Error in stream
- *   > 0                        - Number of decoded bytes
- */
-uint32_t YAAF_LZ4DecodeBlock(YAAF_LZ4DecodeBlockState* pState, char* pResult,
-                             const size_t resultSize, size_t *pBytesRead);
-
-/* Read LZ4 header from stream and validate it
- * return YAAF_FAIL on error
- * return BlockId (> 0) on success
- */
-int YAAF_LZ4ReadAndValidateHeader(YAAF_Stream* pStream);
+int YAAF_MemFileClose(YAAF_MemFile* pFile);
 
 #endif

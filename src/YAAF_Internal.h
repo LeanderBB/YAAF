@@ -33,6 +33,8 @@
 #ifndef __YAAF_ERRORINTERNAL_H__
 #define __YAAF_ERRORINTERNAL_H__
 
+#define YAAF_BLOCK_SIZE (64 * 1024)
+
 void YAAF_SetError(const char* error);
 
 void* YAAF_malloc(size_t size);
@@ -44,5 +46,7 @@ void* YAAF_calloc(size_t nmb, size_t size);
 int YAAF_StrCompareNoCase(const char* str1, const char* str2);
 
 int YAAF_StrContainsChr(const char* str, const char chr);
+
+#define YAAF_PTR_OFFSET(ptr, offset) (((const char*)ptr) + offset)
 
 #endif

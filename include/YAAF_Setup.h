@@ -36,8 +36,8 @@
 
 /* --- Version ------------------------------------------------------------- */
 
-#define YAAF_VERSION_MAJOR 0
-#define YAAF_VERSION_MINOR 5
+#define YAAF_VERSION_MAJOR 2
+#define YAAF_VERSION_MINOR 0
 #define YAAF_VERSION_PATCH 0
 
 #define YAAF_VERSION (YAAF_VERSION_MAJOR * 1000) + (YAAF_VERSION_MINOR * 10) + \
