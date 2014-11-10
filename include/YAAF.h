@@ -50,8 +50,6 @@ typedef struct YAAF_Allocator
     void* (*calloc)(size_t, size_t);
 } YAAF_Allocator;
 
-YAAF_EXPORT void YAAF_CALL YAAF_SetAllocator(const YAAF_Allocator* pAlloc);
-
 #pragma pack(push)
 #pragma pack(1)
 /* representation of date time in the archive */
@@ -94,6 +92,10 @@ typedef struct YAAF_File YAAF_File;
 
 #define YAAF_ARCHIVE_SEP_CHR '/'
 #define YAAF_ARCHIVE_SEP_STR "/"
+
+YAAF_EXPORT int YAAF_CALL YAAF_Init(const YAAF_Allocator* pAlloc);
+
+YAAF_EXPORT void YAAF_CALL YAAF_Shutdown();
 
 YAAF_EXPORT YAAF_Archive* YAAF_CALL YAAF_ArchiveOpen(const char* path);
 

@@ -32,64 +32,84 @@
 
 #include "YAAF.h"
 #include "YAAF_Internal.h"
-/* --------------------------------------------------------------------------*/
+#include "YAAF_TLS.h"
+
 static YAAF_Allocator YAAF_gpAllocator;
-/* --------------------------------------------------------------------------*/
-static const char* YAAF_gErrorStr = NULL;
-/* --------------------------------------------------------------------------*/
-const char* YAAF_GetError()
+static YAAF_TLSKey_t  YAAF_gErrorTLS = 0;
+
+const char*
+YAAF_GetError()
 {
-  return YAAF_gErrorStr;
+    return (const char*) YAAF_TLSGet(YAAF_gErrorTLS);
 }
-/* --------------------------------------------------------------------------*/
-void YAAF_SetError(const char* error)
+
+void
+YAAF_SetError(const char* error)
 {
-  YAAF_gErrorStr = error;
+    YAAF_TLSSet(YAAF_gErrorTLS, error);
 }
-/* --------------------------------------------------------------------------*/
-void YAAF_SetAllocator(const YAAF_Allocator* pAlloc)
+
+int
+YAAF_Init(const YAAF_Allocator* pAlloc)
 {
-  YAAF_gpAllocator.malloc = pAlloc->malloc;
-  YAAF_gpAllocator.calloc = pAlloc->calloc;
-  YAAF_gpAllocator.free = pAlloc->free;
+    YAAF_gpAllocator.malloc = pAlloc->malloc;
+    YAAF_gpAllocator.calloc = pAlloc->calloc;
+    YAAF_gpAllocator.free = pAlloc->free;
+
+    if (YAAF_TLSCreate(&YAAF_gErrorTLS) == YAAF_SUCCESS)
+    {
+        return YAAF_TLSSet(YAAF_gErrorTLS, NULL);
+    }
+    return YAAF_FAIL;
 }
-/* --------------------------------------------------------------------------*/
-void* YAAF_malloc(size_t size)
+
+void
+YAAF_Shutdown()
 {
-  return YAAF_gpAllocator.malloc(size);
+    YAAF_TLSDestroy(YAAF_gErrorTLS);
 }
-/* --------------------------------------------------------------------------*/
-void YAAF_free(void* ptr)
+
+void*
+YAAF_malloc(size_t size)
 {
-  YAAF_gpAllocator.free(ptr);
+    return YAAF_gpAllocator.malloc(size);
 }
-/* --------------------------------------------------------------------------*/
-void* YAAF_calloc(size_t nmb, size_t size)
+
+void
+YAAF_free(void* ptr)
 {
-  return YAAF_gpAllocator.calloc(nmb, size);
+    YAAF_gpAllocator.free(ptr);
 }
-/* --------------------------------------------------------------------------*/
-int YAAF_StrCompareNoCase(const char* str1, const char* str2)
+
+void*
+YAAF_calloc(size_t nmb, size_t size)
+{
+    return YAAF_gpAllocator.calloc(nmb, size);
+}
+
+int
+YAAF_StrCompareNoCase(const char* str1, const char* str2)
 {
 #if defined(YAAF_HAVE_STRCASECMP)
-  return strcasecmp(str1, str2);
+    return strcasecmp(str1, str2);
 #elif defined(YAAF_HAVE_STRICMP)
-  return stricmp(str1, str2);
+    return stricmp(str1, str2);
 #else
 #error No implementation of string case insentive compare
 #endif
 }
-/* --------------------------------------------------------------------------*/
-int YAAF_StrContainsChr(const char* str, const char chr)
+
+int
+YAAF_StrContainsChr(const char* str, const char chr)
 {
-   while(*str != '\0')
-   {
-     if (*str == chr)
-     {
-       return 1;
-     }
-     ++str;
-   }
-   return 0;
+    while(*str != '\0')
+    {
+        if (*str == chr)
+        {
+            return 1;
+        }
+        ++str;
+    }
+    return 0;
 }
-/* --------------------------------------------------------------------------*/
+
