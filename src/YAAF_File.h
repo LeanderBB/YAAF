@@ -34,23 +34,25 @@
 
 #include "YAAF.h"
 #include "YAAF_Internal.h"
-
+#include "YAAF_Compression.h"
 
 struct YAAF_File
 {
   const void* ptr;
-  size_t nBytesRead;
-  size_t nBytesDecoded;
-  size_t nBytesUncompressed;
-  size_t nBytesCompressed;
-  size_t offsetAfterHeader;
+  uint32_t offsetAfterHeader;
   uint32_t cacheOffset;
   uint32_t cacheSize;
-  char cache[YAAF_BLOCK_SIZE];
+  uint32_t nBytesRead;
+  uint32_t nBytesDecoded;
+  uint32_t nBytesUncompressed;
+  uint32_t nBytesCompressed;
+  char cache[YAAF_BLOCK_CACHE_SIZE];
+  YAAF_Decompressor decompressor;
 };
 
 YAAF_File* YAAF_FileCreate(const void* ptr,
-                           const size_t offset,
-                           const size_t sizeCompressed,
-                           const size_t fileSize);
+                           const uint32_t offset,
+                           const uint32_t sizeCompressed,
+                           const uint32_t fileSize,
+                           const int compressor);
 #endif

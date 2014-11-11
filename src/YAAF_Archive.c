@@ -272,7 +272,8 @@ YAAF_ArchiveFile(YAAF_Archive* pArchive,
     return  YAAF_FileCreate(pArchive->memFile.ptr,
                             pArchive->pEntries[index].offset,
                             pArchive->pEntries[index].sizeCompressed,
-                            pArchive->pEntries[index].sizeUncompressed);
+                            pArchive->pEntries[index].sizeUncompressed,
+                            YAAF_COMPRESSION_LZ4_BIT);
 }
 
 int

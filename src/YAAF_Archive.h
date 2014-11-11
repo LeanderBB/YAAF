@@ -62,8 +62,20 @@
 #define YAAF_FILE_HEADER_MAGIC (0xa0116f80)
 #define YAAF_ARCHIVE_FILE_NOT_FOUND 0xFFFFFFFF
 
+
+/* YAAF Entry flags */
+
+enum
+{
+    YAAF_ARCHIVE_FLAG_32_BIT = 1 << 0,
+    YAAF_ARCHIVE_FLAG_64_BIT = 1 << 1
+};
+
+
 #pragma pack(push)
 #pragma pack(1)
+
+
 typedef struct YAAF_Manifest
 {
   uint32_t magic;
@@ -71,6 +83,7 @@ typedef struct YAAF_Manifest
   uint16_t versionRequired;
   uint32_t nEntries;
   uint32_t manifestEntriesSize;
+  uint32_t flags;
 } YAAF_Manifest;
 
 typedef struct YAAF_ManifestEntry
@@ -79,9 +92,9 @@ typedef struct YAAF_ManifestEntry
   uint32_t hashUncompressed;
   uint16_t flags;
   uint16_t nameLen;
-  uint64_t sizeCompressed;
-  uint64_t sizeUncompressed;
-  uint64_t offset;
+  uint32_t sizeCompressed;
+  uint32_t sizeUncompressed;
+  uint32_t offset;
   struct YAAF_DateTime lastModDateTime;
   uint16_t extraLen;
 } YAAF_ManifestEntry;
@@ -98,5 +111,9 @@ struct YAAF_Archive
   const YAAF_Manifest* pManifest;
   const YAAF_ManifestEntry* pEntries;
 };
+
+
+
+
 
 #endif

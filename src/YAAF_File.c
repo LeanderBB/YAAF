@@ -34,253 +34,285 @@
 #include "YAAF_Archive.h"
 #include "YAAF_Internal.h"
 
-
-/* --- C FILE Wrapper -------------------------------------------------------*/
-/*
-static size_t YAAF_fwrite(const void* pBuffer, size_t size, void* pData)
-{
-  FILE* p_file = (FILE*) pData;
-  return fwrite(pBuffer, 1, size, p_file);
-}
-
-static size_t YAAF_fread(void* pBuffer, size_t size, void* pData)
-{
-  FILE* p_file = (FILE*) pData;
-  return fread(pBuffer, 1, size, p_file);
-}
-
-static size_t YAAF_ftell(void* pData)
-{
-  FILE* p_file = (FILE*) pData;
-  return ftell(p_file);
-}
-
-static int YAAF_fseek(YAAF_signed_size_t offset, int flags, void* pData)
-{
-  FILE* p_file = (FILE*) pData;
-  return fseek(p_file, offset, flags);
-}
-
-static void YAAF_fclose(void* pData)
-{
-  FILE* p_file = (FILE*) pData;
-  fclose(p_file);
-}*/
-
-
-YAAF_File* YAAF_FileCreate(const void *ptr,
-                           const size_t offset,
-                           const size_t sizeCompressed,
-                           const size_t fileSize)
+YAAF_File*
+YAAF_FileCreate(const void *ptr,
+                const uint32_t offset,
+                const uint32_t sizeCompressed,
+                const uint32_t fileSize,
+                const int compressor)
 {
 
-  YAAF_File* p_result = NULL;
-  if (!ptr)
-  {
-    return NULL;
-  }
-
-  const char* chr_ptr = (const char*) ptr;
-  chr_ptr += offset;
-
-  /* Read file header */
-
-  const YAAF_FileHeader* p_hdr = (const YAAF_FileHeader*)chr_ptr;
-
-  if (YAAF_LITTLE_E32(p_hdr->magic) != YAAF_FILE_HEADER_MAGIC)
-  {
-    YAAF_SetError("[YAAF_FileCreate] File header magic mismatch");
-    return NULL;
-  }
-
-  chr_ptr += sizeof(YAAF_FileHeader);
-
-  p_result = (YAAF_File*)YAAF_malloc(sizeof(YAAF_File));
-  if (!p_result)
-  {
-    YAAF_SetError("[YAAF_FileCreate] Failed to allocate memory");
-  }
-  else
-  {
-    memset(p_result, 0, sizeof(YAAF_File));
-    p_result->nBytesUncompressed = fileSize;
-    p_result->nBytesCompressed = sizeCompressed;
-    p_result->nBytesRead  = 0;
-  }
-
-  // TODO: init decompressor
-
-  return p_result;
-}
-
-size_t YAAF_FileRead(YAAF_File* pFile,
-                     void* pBuffer,
-                     const size_t bufferSize)
-{
-  size_t bytes_written = 0;
-  uint32_t size_to_copy;
-  if (YAAF_FileEOF(pFile))
-  {
-    /* EOF */
-    return 0;
-  }
-
-  while (bytes_written < bufferSize)
-  {
-
-    /* Decode a new block */
-    if (pFile->cacheOffset >= pFile->cacheSize)
+    YAAF_File* p_result = NULL;
+    if (!ptr)
     {
-      uint32_t bytes_decoded = 0;
-      /* DECODE DAT
-      uint32_t bytes_decoded = YAAF_LZ4DecodeBlock(&pFile->lz4State, pFile->pCache,
-                                                   pFile->lz4State.maxBlockSize,
-                                                   &bytes_read);
-      pFile->nBytesRead += bytes_read;
-      */
-      if (bytes_decoded == 0xFFFFFFFF)
-      {
-        YAAF_SetError("Filed Read: Failed to decode block");
-        return 0;
-      }
-      else if( bytes_decoded > 0)
-      {
-        pFile->nBytesDecoded += bytes_decoded;
-        pFile->cacheSize = bytes_decoded;
-        pFile->cacheOffset = 0;
-      }
-      else
-      {
-        /* EOF */
-        break;
-      }
+        return NULL;
     }
 
-    /* Copy reaming into buffer */
-    if (bytes_written + (pFile->cacheSize - pFile->cacheOffset) < bufferSize)
+    const char* chr_ptr = (const char*) ptr;
+    chr_ptr += offset;
+
+    /* Read file header */
+
+    const YAAF_FileHeader* p_hdr = (const YAAF_FileHeader*)chr_ptr;
+
+    if (YAAF_LITTLE_E32(p_hdr->magic) != YAAF_FILE_HEADER_MAGIC)
     {
-      size_to_copy = pFile->cacheSize - pFile->cacheOffset;
+        YAAF_SetError("[YAAF_FileCreate] File header magic mismatch");
+        return NULL;
+    }
+
+    chr_ptr += sizeof(YAAF_FileHeader);
+
+    p_result = (YAAF_File*)YAAF_malloc(sizeof(YAAF_File));
+    if (!p_result)
+    {
+        YAAF_SetError("[YAAF_FileCreate] Failed to allocate memory");
     }
     else
     {
-      size_to_copy =  bufferSize - bytes_written;
-    }
+        memset(p_result, 0, sizeof(YAAF_File));
+        p_result->nBytesUncompressed = fileSize;
+        p_result->nBytesCompressed = sizeCompressed;
+        p_result->nBytesRead  = 0;
 
-    if (pBuffer) /* only copy if valid output buffer */
-    {
-      memcpy((char*)pBuffer + bytes_written, pFile->cache + pFile->cacheOffset,
-             size_to_copy);
+        /* create decompressor */
+        if (YAAF_DecompressorCreate(&p_result->decompressor, compressor) != YAAF_SUCCESS)
+        {
+            YAAF_free(p_result);
+            p_result = NULL;
+        }
     }
-    bytes_written += size_to_copy;
-    pFile->cacheOffset += size_to_copy;
-  }
-  return bytes_written;
+    return p_result;
 }
 
-int YAAF_FileSeek(YAAF_File* pFile,
-                  YAAF_signed_size_t offset,
-                  int flags)
+static int
+YAAF_FileDecompressNextBlock(YAAF_File* pFile)
 {
-  switch(flags)
-  {
-  case SEEK_SET:
-
-    if(offset < 0)
+    const uint32_t* blocksize = (uint32_t*) YAAF_PTR_OFFSET(pFile->ptr, pFile->nBytesRead);
+    pFile->nBytesRead += sizeof(uint32_t);
+    pFile->cacheOffset = 0;
+    if (blocksize != 0)
     {
-      return YAAF_FAIL;
+
+        return YAAF_DecompressBlock(&pFile->decompressor,
+                                    YAAF_PTR_OFFSET(pFile->ptr, pFile->nBytesRead),
+                                    *blocksize,
+                                    pFile->cache,
+                                    YAAF_BLOCK_CACHE_SIZE,
+                                    &pFile->cacheSize);
+    }
+    else
+    {
+        pFile->cacheSize = 0;
+        return YAAF_COMPRESSION_OK;
+    }
+}
+
+uint32_t
+YAAF_FileRead(YAAF_File* pFile,
+              void* pBuffer,
+              const uint32_t bufferSize)
+{
+    uint32_t bytes_written = 0;
+    uint32_t size_to_copy;
+
+    if (YAAF_FileEOF(pFile))
+    {
+        /* EOF */
+        return 0;
     }
 
-    /* Seek back to positon right after the LZ4 header */
-   /* if (YAAF_STREAM_SEEK(pFile->lz4State.pInputStream, pFile->offsetAfterHeader,
-                         SEEK_SET) == YAAF_FAIL)
+    while (bytes_written < bufferSize)
     {
-      return YAAF_FAIL;
-    }*/
+        /* Decode a new block */
+        if (pFile->cacheOffset >= pFile->cacheSize)
+        {
+            const int result = YAAF_FileDecompressNextBlock(pFile);
+            if (result == YAAF_COMPRESSION_OK)
+            {
+                if( pFile->cacheSize > 0)
+                {
+                    pFile->nBytesDecoded += pFile->cacheSize;
+                    pFile->cacheOffset = 0;
+                }
+                else
+                {
+                    /* EOF */
+                    break;
+                }
+            }
+            else
+            {
+                YAAF_SetError("[YAAF File] Failed to decode next block");
+                return 0;
+            }
+        }
+
+        /* Copy reaming into buffer */
+        if (bytes_written + (pFile->cacheSize - pFile->cacheOffset) < bufferSize)
+        {
+            size_to_copy = pFile->cacheSize - pFile->cacheOffset;
+        }
+        else
+        {
+            size_to_copy =  bufferSize - bytes_written;
+        }
+
+        if (pBuffer) /* only copy if valid output buffer */
+        {
+            memcpy((char*)pBuffer + bytes_written, pFile->cache + pFile->cacheOffset,
+                   size_to_copy);
+        }
+        bytes_written += size_to_copy;
+        pFile->cacheOffset += size_to_copy;
+    }
+    return bytes_written;
+}
+
+
+static int
+YAAF_FileSeekSet(YAAF_File* pFile,
+                 uint32_t bytesRead,
+                 const int offset)
+{
+    const void* ptr = YAAF_PTR_OFFSET(pFile->ptr, pFile->offsetAfterHeader + bytesRead);
+    uint32_t* p_block_size = (uint32_t*) ptr;
+    uint32_t ptr_offset = 0;
+    const uint32_t skip_blocks = (uint32_t) offset / YAAF_BLOCK_SIZE;
+    const uint32_t skip_bytes = (uint32_t) offset % YAAF_BLOCK_SIZE;
+    uint32_t i;
+
 
     /* reset status */
-    pFile->nBytesRead = 0;
+    pFile->nBytesRead =  bytesRead;
     pFile->nBytesDecoded = 0;
     pFile->cacheSize = 0;
     pFile->cacheOffset = 0;
 
-    /* keep reading until the offset is in the pcache */
-   /* do
+    /* Skip the first n skip_blocks */
+    for (i = 0; i < skip_blocks && *p_block_size != 0; ++i)
     {
-      YAAF_FileRead(pFile, NULL, pFile->lz4State.maxBlockSize);
-    } while(pFile->nBytesDecoded < (size_t)offset &&
-            (size_t)offset >= pFile->nBytesDecoded + pFile->lz4State.maxBlockSize);
-            */
+        /* update ptr offset */
+        ptr_offset += sizeof(uint32_t) + *p_block_size;
+        ptr = YAAF_PTR_OFFSET(ptr, ptr_offset);
 
-    /* Adjust offset */
-    pFile->cacheOffset = ((size_t)offset - pFile->nBytesDecoded);
-    return YAAF_SUCCESS;
-  case SEEK_CUR:
+        /* next block size */
+        p_block_size = (uint32_t*) ptr;
 
-    if (offset < 0)
-    {
-      /* check if the offset is still in the cach */
-      YAAF_signed_size_t new_offset = offset + (YAAF_signed_size_t)pFile->cacheOffset;
-      if ( new_offset >= 0)
-      {
-        pFile->cacheOffset = new_offset;
-      }
-      else
-      {
-        /* offset not in cache, need to start from begining again */
-        return YAAF_FileSeek(pFile, pFile->nBytesDecoded - offset, SEEK_SET);
-      }
+        /* updated decode bytes */
+        pFile->nBytesDecoded = YAAF_BLOCK_SIZE;
+
     }
-    else if (offset > 0)
-    {
-      size_t offset_to_reach;
-      /* check if the offset is still in the cache */
-      if (pFile->cacheSize - pFile->cacheOffset < offset && offset <= 0xFFFFFFFF)
-      {
-        pFile->cacheOffset += (uint32_t) offset;
-      }
-      else
-      {
-        /* read forward untill offset in cache */
 
-        /* invalidate cache */
-        pFile->cacheOffset = pFile->cacheSize;
-        offset_to_reach = pFile->nBytesDecoded + offset;
-        /*
-        do
+    pFile->nBytesRead = ptr_offset;
+
+    if (*p_block_size != 0 && i >= skip_blocks)
+    {
+        /* decode next block */
+        const int result = YAAF_FileDecompressNextBlock(pFile);
+        if (result == YAAF_COMPRESSION_OK)
         {
-          YAAF_FileRead(pFile, NULL, pFile->lz4State.maxBlockSize);
-        } while(pFile->nBytesDecoded < offset_to_reach &&
-                offset_to_reach >= pFile->nBytesDecoded + pFile->lz4State.maxBlockSize);
-                */
-
-        /* Adjust offset */
-        pFile->cacheOffset = (offset_to_reach - pFile->nBytesDecoded);
-      }
+            if( pFile->cacheSize > 0)
+            {
+                pFile->nBytesDecoded += pFile->cacheSize;
+                pFile->cacheOffset = skip_bytes;
+            }
+        }
+        else
+        {
+            return YAAF_FAIL;
+        }
     }
     return YAAF_SUCCESS;
-  case SEEK_END:
-    pFile->nBytesRead = pFile->nBytesCompressed;
-    pFile->nBytesDecoded = pFile->nBytesUncompressed;
-    return YAAF_SUCCESS;
-  default:
-    return YAAF_FAIL;
-  }
 }
 
 
-int YAAF_FileEOF(const YAAF_File* pFile)
+int
+YAAF_FileSeek(YAAF_File* pFile,
+              int offset,
+              int flags)
 {
-  return pFile->nBytesRead >= pFile->nBytesCompressed &&
-      pFile->cacheOffset >= pFile->cacheSize;
+    switch(flags)
+    {
+    case SEEK_SET:
+
+        if(offset < 0)
+        {
+            return YAAF_FAIL;
+        }
+
+        if ((uint32_t) offset > pFile->nBytesUncompressed)
+        {
+            pFile->nBytesRead = pFile->nBytesCompressed;
+            pFile->nBytesDecoded = pFile->nBytesUncompressed;
+            pFile->cacheSize = 0;
+            pFile->cacheOffset = 0;
+            return YAAF_SUCCESS;
+        }
+
+        return YAAF_FileSeekSet(pFile, 0, offset);
+    case SEEK_CUR:
+
+        if (offset < 0)
+        {
+            /* check if the offset is still in the cach */
+            int new_offset = offset + (int)pFile->cacheOffset;
+            if ( new_offset >= 0)
+            {
+                pFile->cacheOffset = new_offset;
+            }
+            else
+            {
+                /* offset not in cache, need to start from begining again */
+                return YAAF_FileSeek(pFile, pFile->nBytesDecoded - offset, SEEK_SET);
+            }
+        }
+        else if (offset > 0)
+        {
+
+            /* check if the offset is still in the cache */
+            if ((int)(pFile->cacheSize - pFile->cacheOffset) < offset )
+            {
+                pFile->cacheOffset += (uint32_t) offset;
+            }
+            else
+            {
+                int remaining_in_cache = (int)(pFile->cacheSize - pFile->cacheOffset);
+                int offset_to_reach = offset - remaining_in_cache;
+                /* read forward untill offset in cache */
+                return YAAF_FileSeekSet(pFile, pFile->nBytesRead, offset_to_reach);
+            }
+        }
+        return YAAF_SUCCESS;
+    case SEEK_END:
+        pFile->nBytesRead = pFile->nBytesCompressed;
+        pFile->nBytesDecoded = pFile->nBytesUncompressed;
+        pFile->cacheOffset = 0;
+        pFile->cacheSize = 0;
+        return YAAF_SUCCESS;
+    default:
+        return YAAF_FAIL;
+    }
 }
 
-size_t YAAF_FileTell(const YAAF_File* pFile)
+
+int
+YAAF_FileEOF(const YAAF_File* pFile)
 {
-  return pFile->nBytesDecoded;
+    return pFile->nBytesRead >= pFile->nBytesCompressed &&
+            pFile->cacheOffset >= pFile->cacheSize;
 }
 
-void YAAF_FileClose(YAAF_File* pFile)
+uint32_t
+YAAF_FileTell(const YAAF_File* pFile)
 {
-  YAAF_free(pFile);
+    return pFile->nBytesDecoded;
+}
+
+void
+YAAF_FileDestroy(YAAF_File* pFile)
+{
+    YAAF_DecompressorDestroy(&pFile->decompressor);
+    YAAF_free(pFile);
 }
 

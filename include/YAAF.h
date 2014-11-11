@@ -64,22 +64,13 @@ struct YAAF_DateTime
 };
 #pragma pack(pop)
 
-/* YAAF Entry flags */
-enum
-{
-    YAAF_MANIFEST_FLAGS_COMPRESSION_LZ4_BIT = 1 << 0,
-
-    YAAF_SUPPORTED_COMPRESSIONS = YAAF_MANIFEST_FLAGS_COMPRESSION_LZ4_BIT
-};
-
-
 /* File Info */
 
 typedef struct
 {
     struct YAAF_DateTime lastModification;
-    uint64_t sizeCompressed;
-    uint64_t sizeUncompressed;
+    uint32_t sizeCompressed;
+    uint32_t sizeUncompressed;
 } YAAF_FileInfo;
 
 /* YAAF Archive */
@@ -117,21 +108,21 @@ YAAF_EXPORT int YAAF_CALL YAAF_ArchiveFileInfo(YAAF_Archive* pArchive,
                                                YAAF_FileInfo* pInfo);
 
 YAAF_EXPORT int YAAF_CALL YAAF_ArchiveContains(const YAAF_Archive* pArchive,
-                                              const char* file);
+                                               const char* file);
 
-YAAF_EXPORT size_t YAAF_CALL YAAF_FileRead(YAAF_File* pFile,
-                                           void* pBuffer,
-                                           const size_t size);
+YAAF_EXPORT uint32_t YAAF_CALL YAAF_FileRead(YAAF_File* pFile,
+                                             void* pBuffer,
+                                             const uint32_t size);
 
 YAAF_EXPORT int YAAF_CALL YAAF_FileSeek(YAAF_File* pFile,
-                                        YAAF_signed_size_t offset,
+                                        int offset,
                                         int flags);
 
 YAAF_EXPORT int YAAF_CALL YAAF_FileEOF(const YAAF_File* pFile);
 
-YAAF_EXPORT size_t YAAF_CALL YAAF_FileTell(const YAAF_File* pFile);
+YAAF_EXPORT uint32_t YAAF_CALL YAAF_FileTell(const YAAF_File* pFile);
 
-YAAF_EXPORT void YAAF_CALL YAAF_FileClose(YAAF_File* pFile);
+YAAF_EXPORT void YAAF_CALL YAAF_FileDestroy(YAAF_File* pFile);
 
 
 #endif

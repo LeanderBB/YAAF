@@ -29,40 +29,13 @@
  * You can contact the author at :
  * - YAAF source repository : http://www.github.com/LeanderBB/YAAF
  */
+#ifndef __YAAF_COMPRESSION_LZ4_H__
+#define __YAAF_COMPRESSION_LZ4_H__
 
-#ifndef __YAAF_ERRORINTERNAL_H__
-#define __YAAF_ERRORINTERNAL_H__
+#include "YAAF_Compression.h"
 
-#define YAAF_BLOCK_SIZE (64 * 1024)
+void YAAF_CompressorCreateLZ4(YAAF_Compressor* pCompressor);
 
-#define YAAF_BLOCK_CACHE_SIZE (72 * 1024)
-
-#define YAAF_PTR_OFFSET(ptr, offset) (((const char*)ptr) + offset)
-
-enum
-{
-    YAAF_COMPRESSION_LZ4_BIT = 1 << 0,
-};
-
-enum
-{
-    YAAF_SUPPORTED_COMPRESSIONS = YAAF_COMPRESSION_LZ4_BIT
-};
-
-
-
-void YAAF_SetError(const char* error);
-
-void* YAAF_malloc(size_t size);
-
-void YAAF_free(void* ptr);
-
-void* YAAF_calloc(size_t nmb, size_t size);
-
-int YAAF_StrCompareNoCase(const char* str1, const char* str2);
-
-int YAAF_StrContainsChr(const char* str, const char chr);
-
-
+void YAAF_DecompressorCreateLZ4(YAAF_Decompressor* pDecompressor);
 
 #endif

@@ -4,12 +4,12 @@
 project(YAAF)
 cmake_minimum_required(VERSION 2.8)
 
-
 ################################################################################
 # Compiler flags
 ################################################################################
 if(NOT MSVC)
-set(YAAF_C_WARNING_FLAGS "-Wall -Werror -Wextra -Winit-self -Wuninitialized -Wmissing-declarations -pedantic -fvisibility=hidden")
+set(YAFF_C_WERROR "-Werror")
+set(YAAF_C_WARNING_FLAGS "-Wall -Wextra -Winit-self -Wuninitialized -Wmissing-declarations -pedantic -fvisibility=hidden")
 set(YAAF_CXX_WARNING_FLAGS "-Woverloaded-virtual")
 
 set(YAAF_C_COMPILE_FLAGS "-std=c99")
@@ -22,6 +22,7 @@ set(YAAF_C_COMPILE_FLAGS_RELEASE "-O3 -g")
 set(YAAF_CXX_COMPILE_FLAGS_RELEASE "-O3 -g")
 
 else()
+set(YAFF_C_WERROR )
 set(YAAF_C_WARNING_FLAGS )
 set(YAAF_CXX_WARNING_FLAGS )
 
@@ -88,10 +89,15 @@ endif()
 
 find_package(Threads REQUIRED)
 
+################################################################################
+# 3rd party libs
+################################################################################
+add_subdirectory(3rdparty)
 
 ################################################################################
 # LIB Settings
 ################################################################################
+set(CMAKE_C_FLAGS "${YAAF_C_WARNING_FLAGS} ${YAAF_C_COMPILE_FLAGS} ${YAFF_C_WERROR}")
 
 set(YAAF_LIB_NAME YAAF)
 set(YAAF_CONFIG_HEADER_DIR ${PROJECT_BINARY_DIR}/build_config)
@@ -104,6 +110,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/src
   ${YAAF_CONFIG_HEADER_DIR}
+  ${YAAF_LZ4_INCLUDE_DIR}
 )
 
 
@@ -122,6 +129,8 @@ set(YAAF_INTERNAL_HDR
   src/YAAF_File.h
   src/YAAF_Internal.h
   src/YAAF_MemFile.h
+  src/YAAF_Compression.h
+  src/YAAF_Compression_lz4.h
 )
 
 
@@ -131,13 +140,18 @@ set(YAAF_SRC
   src/YAAF_Internal.c
   src/YAAF_MemFile.c
   src/YAAF_TLS.c
+  src/YAAF_Compression.c
+  src/YAAF_Compression_lz4.c
 )
 
 add_library(${YAAF_LIB_NAME} ${YAAF_SRC} ${YAAF_HDR} ${YAAF_INTERNAL_HDR})
 
 set(YAAF_LIBRARIES ${YAAF_LIB_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
+target_link_libraries(${YAAF_LIB_NAME} ${YAAF_LZ4_LIBRARY})
+
 install(TARGETS ${YAAF_LIB_NAME} DESTINATION lib)
+install(TARGETS ${YAAF_LZ4_LIBRARY} DESTINATION lib)
 install(FILES ${YAAF_HDR} DESTINATION include/YAAF)
 
 #add_executable(YAAF_Test src/YAAF_test.c)
