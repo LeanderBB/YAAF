@@ -33,23 +33,6 @@
 #include "YAAF.h"
 #include "YAAF_Internal.h"
 
-#include <sys/stat.h>
-
-
-static int
-YAAF_GetFileSize(size_t* out,
-                 const char* path)
-{
-    struct stat stat_inf;
-    // only get size information if it is a regular file
-    if (stat(path, &stat_inf) && S_ISREG(stat_inf.st_mode) == 0)
-    {
-        *out = stat_inf.st_size;
-        return YAAF_SUCCESS;
-    }
-    return YAAF_FAIL;
-}
-
 #if defined(YAAF_OS_UNIX)
 #if defined(YAAF_HAVE_MMAN_H)
 #include <sys/mman.h>

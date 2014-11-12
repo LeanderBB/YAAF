@@ -34,6 +34,9 @@
 #include "YAAF_Internal.h"
 #include "YAAF_TLS.h"
 
+#include <sys/stat.h>
+
+
 static YAAF_Allocator YAAF_gpAllocator;
 static YAAF_TLSKey_t  YAAF_gErrorTLS = 0;
 
@@ -52,9 +55,18 @@ YAAF_SetError(const char* error)
 int
 YAAF_Init(const YAAF_Allocator* pAlloc)
 {
-    YAAF_gpAllocator.malloc = pAlloc->malloc;
-    YAAF_gpAllocator.calloc = pAlloc->calloc;
-    YAAF_gpAllocator.free = pAlloc->free;
+    if (pAlloc)
+    {
+        YAAF_gpAllocator.malloc = pAlloc->malloc;
+        YAAF_gpAllocator.calloc = pAlloc->calloc;
+        YAAF_gpAllocator.free = pAlloc->free;
+    }
+    else
+    {
+        YAAF_gpAllocator.malloc = malloc;
+        YAAF_gpAllocator.calloc = calloc;
+        YAAF_gpAllocator.free = free;
+    }
 
     if (YAAF_TLSCreate(&YAAF_gErrorTLS) == YAAF_SUCCESS)
     {
@@ -111,5 +123,19 @@ YAAF_StrContainsChr(const char* str, const char chr)
         ++str;
     }
     return 0;
+}
+
+int
+YAAF_GetFileSize(size_t* out,
+                 const char* path)
+{
+    struct stat stat_inf;
+    // only get size information if it is a regular file
+    if (stat(path, &stat_inf) == 0 && S_ISREG(stat_inf.st_mode))
+    {
+        *out = stat_inf.st_size;
+        return YAAF_SUCCESS;
+    }
+    return YAAF_FAIL;
 }
 

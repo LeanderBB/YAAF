@@ -71,6 +71,7 @@ YAAF_FileCreate(const void *ptr,
     else
     {
         memset(p_result, 0, sizeof(YAAF_File));
+        p_result->ptr = chr_ptr;
         p_result->nBytesUncompressed = fileSize;
         p_result->nBytesCompressed = sizeCompressed;
         p_result->nBytesRead  = 0;
@@ -88,18 +89,39 @@ YAAF_FileCreate(const void *ptr,
 static int
 YAAF_FileDecompressNextBlock(YAAF_File* pFile)
 {
-    const uint32_t* blocksize = (uint32_t*) YAAF_PTR_OFFSET(pFile->ptr, pFile->nBytesRead);
+    const uint32_t block_size = *(uint32_t*) YAAF_PTR_OFFSET(pFile->ptr, pFile->nBytesRead);
+    const uint32_t data_size = YAAF_BLOCK_SIZE_GET(block_size);
     pFile->nBytesRead += sizeof(uint32_t);
     pFile->cacheOffset = 0;
-    if (blocksize != 0)
+    /* check if there are more blocks available */
+    if (data_size != 0)
     {
+        /* decompress only if the block has been compressed */
+        if (YAAF_BLOCK_SIZE_COMPRESSED(block_size))
+        {
+            int res =YAAF_DecompressBlock(&pFile->decompressor,
+                                          YAAF_PTR_OFFSET(pFile->ptr, pFile->nBytesRead),
+                                          data_size,
+                                          pFile->cacheBlock,
+                                          YAAF_BLOCK_CACHE_SIZE_RD,
+                                          &pFile->cacheSize);
+            pFile->cachePtr = &pFile->cacheBlock[0];
+            if (res == YAAF_COMPRESSION_OK)
+            {
+                pFile->nBytesRead += data_size;
+            }
+            return res;
+        }
+        else
+        {
+            /* do not copy any memory, simply point directly to the memory
+               mapped file */
+            pFile->cachePtr = YAAF_PTR_OFFSET(pFile->ptr, pFile->nBytesRead);
+            pFile->cacheSize = data_size;
+            pFile->nBytesRead += data_size;
 
-        return YAAF_DecompressBlock(&pFile->decompressor,
-                                    YAAF_PTR_OFFSET(pFile->ptr, pFile->nBytesRead),
-                                    *blocksize,
-                                    pFile->cache,
-                                    YAAF_BLOCK_CACHE_SIZE,
-                                    &pFile->cacheSize);
+            return YAAF_COMPRESSION_OK;
+        }
     }
     else
     {
@@ -160,7 +182,8 @@ YAAF_FileRead(YAAF_File* pFile,
 
         if (pBuffer) /* only copy if valid output buffer */
         {
-            memcpy((char*)pBuffer + bytes_written, pFile->cache + pFile->cacheOffset,
+            memcpy((char*)pBuffer + bytes_written,
+                   YAAF_PTR_OFFSET(pFile->cachePtr, pFile->cacheOffset),
                    size_to_copy);
         }
         bytes_written += size_to_copy;
@@ -175,8 +198,9 @@ YAAF_FileSeekSet(YAAF_File* pFile,
                  uint32_t bytesRead,
                  const int offset)
 {
-    const void* ptr = YAAF_PTR_OFFSET(pFile->ptr, pFile->offsetAfterHeader + bytesRead);
-    uint32_t* p_block_size = (uint32_t*) ptr;
+    fflush(stdout);
+    const void* ptr = YAAF_PTR_OFFSET(pFile->ptr, bytesRead);
+    uint32_t block_size = YAAF_BLOCK_SIZE_GET(*((uint32_t*) ptr));
     uint32_t ptr_offset = 0;
     const uint32_t skip_blocks = (uint32_t) offset / YAAF_BLOCK_SIZE;
     const uint32_t skip_bytes = (uint32_t) offset % YAAF_BLOCK_SIZE;
@@ -184,29 +208,28 @@ YAAF_FileSeekSet(YAAF_File* pFile,
 
 
     /* reset status */
-    pFile->nBytesRead =  bytesRead;
+    pFile->nBytesRead = bytesRead;
     pFile->nBytesDecoded = 0;
     pFile->cacheSize = 0;
     pFile->cacheOffset = 0;
 
     /* Skip the first n skip_blocks */
-    for (i = 0; i < skip_blocks && *p_block_size != 0; ++i)
+    for (i = 0; i < skip_blocks && block_size != 0; ++i)
     {
         /* update ptr offset */
-        ptr_offset += sizeof(uint32_t) + *p_block_size;
+        ptr_offset = sizeof(uint32_t) + block_size;
+        pFile->nBytesRead += ptr_offset;
         ptr = YAAF_PTR_OFFSET(ptr, ptr_offset);
 
         /* next block size */
-        p_block_size = (uint32_t*) ptr;
+        block_size = YAAF_BLOCK_SIZE_GET(*((uint32_t*) ptr));
 
         /* updated decode bytes */
-        pFile->nBytesDecoded = YAAF_BLOCK_SIZE;
+        pFile->nBytesDecoded += YAAF_BLOCK_SIZE;
 
     }
 
-    pFile->nBytesRead = ptr_offset;
-
-    if (*p_block_size != 0 && i >= skip_blocks)
+    if (block_size != 0 && i >= skip_blocks)
     {
         /* decode next block */
         const int result = YAAF_FileDecompressNextBlock(pFile);

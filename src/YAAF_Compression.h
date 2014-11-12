@@ -41,6 +41,11 @@ enum
     YAAF_COMPRESSION_OUTPUT_INSUFFICIENT
 };
 
+#define YAAF_MAX_BLOCK_SIZE 0x7FFFFFFF
+#define YAAF_BLOCK_SIZE_BUILD(compressed, size) ((compressed << 31) | (size & YAAF_MAX_BLOCK_SIZE))
+#define YAAF_BLOCK_SIZE_COMPRESSED(size) (size >> 31)
+#define YAAF_BLOCK_SIZE_GET(size) (size & YAAF_MAX_BLOCK_SIZE)
+
 typedef struct
 {
     void* state;

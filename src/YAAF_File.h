@@ -39,14 +39,14 @@
 struct YAAF_File
 {
   const void* ptr;
-  uint32_t offsetAfterHeader;
   uint32_t cacheOffset;
   uint32_t cacheSize;
   uint32_t nBytesRead;
   uint32_t nBytesDecoded;
   uint32_t nBytesUncompressed;
   uint32_t nBytesCompressed;
-  char cache[YAAF_BLOCK_CACHE_SIZE];
+  char cacheBlock[YAAF_BLOCK_CACHE_SIZE_RD];
+  const void* cachePtr;
   YAAF_Decompressor decompressor;
 };
 

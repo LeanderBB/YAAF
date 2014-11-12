@@ -57,13 +57,23 @@ static int YAAF_CompressLZ4(void* pState,
 
     int bytes_compressed = LZ4_compressHC(inbuffer, outbuffer, (int) insize);
 
-    if (bytes_compressed <= 0)
+    if (bytes_compressed <0)
     {
         return YAAF_COMPRESSION_FAILED;
     }
 
-    *outWritten = (uint32_t) bytes_compressed;
-    return YAAF_COMPRESSION_OK;
+    if (bytes_compressed == 0)
+    {
+        /* no compression */
+        memcpy(outbuffer, inbuffer, insize);
+        *outWritten = YAAF_BLOCK_SIZE_BUILD(0, insize);
+        return YAAF_COMPRESSION_OK;
+    }
+    else
+    {
+        *outWritten = YAAF_BLOCK_SIZE_BUILD(1, bytes_compressed);
+        return YAAF_COMPRESSION_OK;
+    }
 }
 
 static int YAAF_DecompressLZ4(void* pState,

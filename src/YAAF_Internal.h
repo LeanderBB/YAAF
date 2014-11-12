@@ -33,11 +33,13 @@
 #ifndef __YAAF_ERRORINTERNAL_H__
 #define __YAAF_ERRORINTERNAL_H__
 
-#define YAAF_BLOCK_SIZE (64 * 1024)
+#define YAAF_BLOCK_SIZE (128 * 1024)
 
-#define YAAF_BLOCK_CACHE_SIZE (72 * 1024)
+#define YAAF_BLOCK_CACHE_SIZE_RD YAAF_BLOCK_SIZE
 
-#define YAAF_PTR_OFFSET(ptr, offset) (((const char*)ptr) + offset)
+#define YAAF_BLOCK_CACHE_SIZE_WR (YAAF_BLOCK_SIZE + (8 * 1024))
+
+#define YAAF_PTR_OFFSET(ptr, offset) (((char*)ptr) + offset)
 
 enum
 {
@@ -63,6 +65,8 @@ int YAAF_StrCompareNoCase(const char* str1, const char* str2);
 
 int YAAF_StrContainsChr(const char* str, const char chr);
 
+int YAAF_GetFileSize(size_t* out,
+                     const char* path);
 
 
 #endif

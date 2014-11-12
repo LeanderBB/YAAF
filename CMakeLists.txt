@@ -146,16 +146,16 @@ set(YAAF_SRC
 
 add_library(${YAAF_LIB_NAME} ${YAAF_SRC} ${YAAF_HDR} ${YAAF_INTERNAL_HDR})
 
-set(YAAF_LIBRARIES ${YAAF_LIB_NAME} ${CMAKE_THREAD_LIBS_INIT})
+set(YAAF_LIBRARIES ${YAAF_LIB_NAME} ${YAAF_LZ4_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 
 target_link_libraries(${YAAF_LIB_NAME} ${YAAF_LZ4_LIBRARY})
 
 install(TARGETS ${YAAF_LIB_NAME} DESTINATION lib)
-install(TARGETS ${YAAF_LZ4_LIBRARY} DESTINATION lib)
 install(FILES ${YAAF_HDR} DESTINATION include/YAAF)
 
-#add_executable(YAAF_Test src/YAAF_test.c)
-#target_link_libraries(YAAF_Test ${YAAF_LIB_NAME})
+if(NOT YAAF_EXCLUDE_TESTS)
+add_subdirectory(test)
+endif()
 
 
 if(NOT YAAF_EXCLUDE_TOOLS)
