@@ -43,6 +43,7 @@
 #include <errno.h>
 #endif
 
+#include <limits.h>
 
 void
 YAAFCL_DirEntryInit(YAAFCL_DirEntry* pEntry)
@@ -312,7 +313,7 @@ YAAFCL_ScanDirectory(YAAFCL_DirEntryStack* pStack,
             }
 
             /* if it is a directory */
-            if (p_cur_dirent->d_type == DT_REG)
+            if (S_ISDIR(p_cur_dirent->d_type))
             {
                 if (YAAFCL_AddFileToEntryStack(pStack, p_cur_path->str, p_cur_dirent->d_name,
                                                real_path.str) != YAAF_SUCCESS)
@@ -320,7 +321,7 @@ YAAFCL_ScanDirectory(YAAFCL_DirEntryStack* pStack,
                     goto YAAFCL_ScanDirFail;
                 }
             }
-            else if (p_cur_dirent->d_type == DT_DIR && (flags & YAAFCL_SWITCH_RECURSIVE_BIT))
+            else if (S_ISDIR(p_cur_dirent->d_type) && (flags & YAAFCL_SWITCH_RECURSIVE_BIT))
             {
                 YAAFCL_Str full_path;
                 YAAFCL_StrInit(&full_path);

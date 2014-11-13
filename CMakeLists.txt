@@ -7,12 +7,19 @@ cmake_minimum_required(VERSION 2.8)
 ################################################################################
 # Compiler flags
 ################################################################################
+
+if("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+    if((UNIX) AND (NOT APPLE))
+        set(YAAF_C_COMPILER_EXTRA "-D_GNU_SOURCE")
+    endif()
+endif()
+
 if(NOT MSVC)
 set(YAFF_C_WERROR "-Werror")
 set(YAAF_C_WARNING_FLAGS "-Wall -Wextra -Winit-self -Wuninitialized -Wmissing-declarations -pedantic -fvisibility=hidden")
 set(YAAF_CXX_WARNING_FLAGS "-Woverloaded-virtual")
 
-set(YAAF_C_COMPILE_FLAGS "-std=c99")
+set(YAAF_C_COMPILE_FLAGS "-std=c99 ${YAAF_C_COMPILER_EXTRA}")
 set(YAAF_CXX_COMPILE_FLAGS "-std=c++11 -fno-exceptions -fno-rtti")
 
 set(YAAF_C_COMPILE_FLAGS_DEBUG "-g -O0 -fno-inline -DYAAF_DEBUG")
@@ -26,7 +33,7 @@ set(YAFF_C_WERROR )
 set(YAAF_C_WARNING_FLAGS )
 set(YAAF_CXX_WARNING_FLAGS )
 
-set(YAAF_C_COMPILE_FLAGS )
+set(YAAF_C_COMPILE_FLAGS "${YAAF_C_COMPILER_EXTRA}")
 set(YAAF_CXX_COMPILE_FLAGS )
 
 set(YAAF_C_COMPILE_FLAGS_DEBUG "/DYAAF_DEBUG")
