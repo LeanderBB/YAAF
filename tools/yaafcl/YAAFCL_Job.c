@@ -142,6 +142,7 @@ int YAAFCL_JobCompress(FILE* pOutput,
     YAAF_Manifest manifest;
     int result = YAAF_FAIL;
     size_t total_size = sizeof(YAAF_Manifest);
+    XXH32_state_t hash_state;
 
     YAAF_ASSERT(pOutput);
     YAAF_ASSERT(pFiles);
@@ -230,12 +231,25 @@ int YAAFCL_JobCompress(FILE* pOutput,
     /* sort manifest entries */
     qsort(p_manifest_entries,pFiles->count, sizeof(YAAFCL_DirEntry*), YAAFCL_DirEntryCompareFnc);
 
+    XXH32_reset(&hash_state, 0);
     /* for each manifest entry */
     for(index = 0; index < pFiles->count; ++index)
     {
-        /*write manifest entry */
-        bytes_written = fwrite(&p_manifest_entries[index]->manifestInfo, 1,
-                               sizeof(p_manifest_entries[index]->manifestInfo), pOutput);
+        /* update hash */
+
+        if(XXH32_update(&hash_state, &p_manifest_entries[index]->manifestInfo, sizeof(YAAF_ManifestEntry)) != XXH_OK)
+        {
+            YAAFCL_LogError("[CompressArchive] Failed calculate hash for entry \"%s\"\n.",
+                            p_manifest_entries[index]->archivePath.str);
+            goto fail;
+        }
+
+        if(XXH32_update(&hash_state, p_manifest_entries[index]->archivePath.str, p_manifest_entries[index]->archivePath.len + 1) != XXH_OK)
+        {
+            YAAFCL_LogError("[CompressArchive] Failed calculate hash for entry name \"%s\"\n.",
+                            p_manifest_entries[index]->archivePath.str);
+            goto fail;
+        }
 
         p_manifest_entries[index]->manifestInfo.magic = YAAF_LITTLE_E32(p_manifest_entries[index]->manifestInfo.magic);
         p_manifest_entries[index]->manifestInfo.hashUncompressed = YAAF_LITTLE_E32(p_manifest_entries[index]->manifestInfo.hashUncompressed);
@@ -246,12 +260,17 @@ int YAAFCL_JobCompress(FILE* pOutput,
         p_manifest_entries[index]->manifestInfo.offset = YAAF_LITTLE_E64(p_manifest_entries[index]->manifestInfo.offset);
         p_manifest_entries[index]->manifestInfo.extraLen = YAAF_LITTLE_E16(p_manifest_entries[index]->manifestInfo.extraLen);
 
+        /*write manifest entry */
+        bytes_written = fwrite(&p_manifest_entries[index]->manifestInfo, 1,
+                               sizeof(p_manifest_entries[index]->manifestInfo), pOutput);
+
         if (bytes_written != sizeof(p_manifest_entries[index]->manifestInfo))
         {
             YAAFCL_LogError("[CompressArchive] Failed to write manifest entry for entry \"%s\"\n.",
                             p_manifest_entries[index]->archivePath.str);
             goto fail;
         }
+
         /*write manifest entry extra - Nothing at this point*/
 
         /*write manifest entry name */
@@ -270,7 +289,7 @@ int YAAFCL_JobCompress(FILE* pOutput,
 
     /* write manifest */
     manifest.manifestEntriesSize = YAAF_LITTLE_E32(total_manifest_entries_size);
-
+    manifest.entriesHash = XXH32_digest(&hash_state);
     bytes_written = fwrite(&manifest, 1, sizeof(manifest), pOutput);
     if (bytes_written != sizeof(manifest))
     {

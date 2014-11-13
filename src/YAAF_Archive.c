@@ -202,6 +202,13 @@ YAAF_ArchiveParse(YAAF_Archive* pArchive,
     entries_offset = manifest_offset - pArchive->pManifest->manifestEntriesSize;
     tmp_ptr = (const YAAF_ManifestEntry*) YAAF_CONST_PTR_OFFSET(pArchive->memFile.ptr, entries_offset);
 
+    /* check entries hash */
+    if (pArchive->pManifest->entriesHash != XXH32(tmp_ptr, pArchive->pManifest->manifestEntriesSize, 0))
+    {
+        YAAF_SetError("Manifest Entry list corrupted");
+        return YAAF_FAIL;
+    }
+
     pArchive->pEntries = YAAF_malloc(sizeof(void*) * pArchive->pManifest->nEntries);
 
     /* Validate entries */

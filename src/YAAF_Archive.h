@@ -88,6 +88,7 @@ typedef struct YAAF_Manifest
   uint16_t versionRequired;
   uint32_t nEntries;
   uint32_t manifestEntriesSize;
+  uint32_t entriesHash;
   uint32_t flags;
 } YAAF_Manifest;
 
