@@ -33,6 +33,28 @@
 #ifndef __YAAF_H__
 #define __YAAF_H__
 
+/**
+ * YAAF - Yet Another Archive Format
+ *
+ * YAAF is a compressed archive format designed to with one specific goal:
+ * High Speed Rutime Decompression of compressed packed data.
+ *
+ * YAAF uses LZ4 to achieve high decompression speeds whilst sacrificing some
+ * compression rate. You can find more information on LZ4 here
+ * http://fastcompression.blogspot.de/p/lz4.html and
+ * https://code.google.com/p/lz4/.
+ *
+ * Furthermore, YAAF use block based compression to allow for faster seek
+ * operations on the compressed data and the archive is accessed through memory
+ * mapped files. This way the OS's memory manager handles the data transfer,
+ * resulting in less data copies, easier multi-threaded access and an
+ * overall improved performance.
+ */
+
+/**
+ * This struct holds all the functions required to replace the default system
+ * allocator used by YAAF.
+ */
 #include "YAAF_Setup.h"
 
 #define YAAF_FAIL (-1)
