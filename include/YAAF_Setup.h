@@ -36,11 +36,11 @@
 
 /* --- Version ------------------------------------------------------------- */
 
-#define YAAF_VERSION_MAJOR 2
+#define YAAF_VERSION_MAJOR 1
 #define YAAF_VERSION_MINOR 0
 #define YAAF_VERSION_PATCH 0
 
-#define YAAF_VERSION (YAAF_VERSION_MAJOR * 1000) + (YAAF_VERSION_MINOR * 10) + \
+#define YAAF_VERSION (YAAF_VERSION_MAJOR * 100 * 100) + (YAAF_VERSION_MINOR * 100) + \
   YAAF_VERSION_PATCH
 
 
@@ -134,7 +134,8 @@
 #endif
 
 #if defined(YAAF_CPU_BE)
-#define YAAF_REQUIRE_BSWAP
+#error "Big Endian Platforms currently unsupported"
+/* #define YAAF_REQUIRE_BSWAP */
 #endif
 
 /* use builtin swapping functions when possilbe */
@@ -218,6 +219,7 @@ static YAAF_INLINE YAAF_BSWAP64(uint64_t v)
 #if defined(YAAF_HAVE_STRINGS_H)
 #include <strings.h>
 #endif
+#include <time.h>
 
 #if defined(YAAF_COMPILER_C99) || defined(YAAF_HAVE_INTTYPES_H)
 #include <inttypes.h>

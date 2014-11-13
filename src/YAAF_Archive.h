@@ -34,6 +34,7 @@
 
 #include "YAAF.h"
 #include "YAAF_MemFile.h"
+#include "YAAF_Internal.h"
 /*
  * YAAF Archive layout
  * Each Manifest Entry is sorted alphabetically so that the

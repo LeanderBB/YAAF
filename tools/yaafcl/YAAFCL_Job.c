@@ -21,9 +21,9 @@
 #include "YAAFCL_Job.h"
 #include "YAAF_Compression.h"
 #include "xxhash.h"
-/* --------------------------------------------------------------------------*/
+
 /* --- Single Thread Implementation -----------------------------------------*/
-/* --------------------------------------------------------------------------*/
+
 static int
 YAAFCL_CompressFile(FILE *pInput,
                     FILE* pOutput,
@@ -38,8 +38,9 @@ YAAFCL_CompressFile(FILE *pInput,
     XXH32_state_t hash_state;
 
 
-    if(YAAF_CompressorCreate(&c, YAAF_COMPRESSION_LZ4_BIT) == YAAF_FAIL)
+    if(YAAF_CompressorCreate(&c, pEntry->flags & YAAF_SUPPORTED_COMPRESSIONS_MASK) == YAAF_FAIL)
     {
+        YAAFCL_LogError("[Compress] Failed to create compressor\n");
         return YAAF_FAIL;
     }
 
@@ -55,26 +56,30 @@ YAAFCL_CompressFile(FILE *pInput,
         bytes_read = fread(tmp_input, 1, YAAF_BLOCK_SIZE, pInput);
         if (!bytes_read)
         {
+            YAAFCL_LogError("[Compress] Failed to read into buffer\n");
             goto cleanup;
         }
 
         /* compress block */
         if (YAAF_CompressBlock(&c, tmp_input, bytes_read, tmp_output,
-                                YAAF_BLOCK_CACHE_SIZE_WR, &block_size) != YAAF_COMPRESSION_OK)
+                               YAAF_BLOCK_CACHE_SIZE_WR, &block_size) != YAAF_COMPRESSION_OK)
         {
-             goto cleanup;
+            YAAFCL_LogError("[Compress] Failed to compress block\n");
+            goto cleanup;
         }
 
         /* write block size */
         if (fwrite(&block_size, 1, sizeof(block_size), pOutput) != sizeof(uint32_t))
         {
-             goto cleanup;
+            YAAFCL_LogError("[Compress] Failed to write block size\n");
+            goto cleanup;
         }
 
         /* write compressed block */
         if (fwrite(tmp_output, 1, YAAF_BLOCK_SIZE_GET(block_size), pOutput)
                 != YAAF_BLOCK_SIZE_GET(block_size))
         {
+            YAAFCL_LogError("[Compress] Failed to write block\n");
             goto cleanup;
         }
 
@@ -82,7 +87,8 @@ YAAFCL_CompressFile(FILE *pInput,
         if (XXH32_update(&hash_state, tmp_output, YAAF_BLOCK_SIZE_GET(block_size))
                 != XXH_OK)
         {
-             goto cleanup;
+            YAAFCL_LogError("[Compress] Failed to generate hash\n");
+            goto cleanup;
         }
 
         file_size += bytes_read;
@@ -92,6 +98,7 @@ YAAFCL_CompressFile(FILE *pInput,
     /* write end of block */
     if (fwrite(&end_block, 1, sizeof(end_block), pOutput) != sizeof(uint32_t))
     {
+        YAAFCL_LogError("[Compress] Failed to write end block\n");
         goto cleanup;
     }
 
@@ -102,7 +109,6 @@ cleanup:
 
     if (result == YAAF_SUCCESS)
     {
-        pEntry->flags |= YAAF_COMPRESSION_LZ4_BIT;
         pEntry->hashUncompressed = XXH32_digest(&hash_state);
         pEntry->sizeCompressed = file_size_compressed;
         if (pEntry->sizeUncompressed != file_size_compressed)
@@ -113,16 +119,19 @@ cleanup:
 
     return result;
 }
-/* --------------------------------------------------------------------------*/
-static int YAAFCL_DirEntryCompareFnc(const void* p1, const void* p2)
+
+static int
+YAAFCL_DirEntryCompareFnc(const void* p1,
+                          const void* p2)
 {
     const YAAFCL_DirEntry *p_entry1, *p_entry2;
     p_entry1 = *(YAAFCL_DirEntry**) p1;
     p_entry2 = *(YAAFCL_DirEntry**) p2;
     return YAAF_StrCompareNoCase(p_entry1->archivePath.str, p_entry2->archivePath.str);
 }
-/* --------------------------------------------------------------------------*/
-int YAAFCL_JobCompress(FILE* pOutput, YAAFCL_DirEntryStack* pFiles)
+
+int YAAFCL_JobCompress(FILE* pOutput,
+                       YAAFCL_DirEntryStack* pFiles)
 {
     YAAFCL_DirEntry** p_manifest_entries = NULL;
     YAAFCL_DirEntryStackNode* p_cur_node = pFiles->pNodes;
@@ -131,10 +140,33 @@ int YAAFCL_JobCompress(FILE* pOutput, YAAFCL_DirEntryStack* pFiles)
     uint32_t total_manifest_entries_size = 0;
     YAAF_Manifest manifest;
     int result = YAAF_FAIL;
+    size_t total_size = sizeof(YAAF_Manifest);
 
     YAAF_ASSERT(pOutput);
     YAAF_ASSERT(pFiles);
     YAAF_ASSERT(pFiles->count <= (uint32_t)0xFFFFFFFF);
+
+
+
+    /* perform size check */
+
+    while(p_cur_node)
+    {
+
+        total_size += sizeof(YAAF_ManifestEntry);
+        total_size += p_cur_node->pEntry->manifestInfo.extraLen;
+        total_size += p_cur_node->pEntry->manifestInfo.nameLen;
+        total_size += p_cur_node->pEntry->manifestInfo.sizeCompressed;
+
+        if (total_size > YAAF_MAX_ARCHIVE_SIZE)
+        {
+            YAAFCL_LogError("[CompressArchive] Archive size exceed addressable limits\n");
+            return result;
+        }
+        p_cur_node = p_cur_node->pNext;
+    }
+
+
     file_hdr.magic = YAAF_LITTLE_E32(YAAF_FILE_HEADER_MAGIC);
     manifest.magic = YAAF_LITTLE_E32(YAAF_MANIFEST_MAGIC);
     manifest.versionBuilt = YAAF_LITTLE_E16(YAAF_VERSION);
@@ -144,7 +176,7 @@ int YAAFCL_JobCompress(FILE* pOutput, YAAFCL_DirEntryStack* pFiles)
 
     if (!pFiles->count)
     {
-        YAAFCL_LogError("[CompressArchive] No files to archive");
+        YAAFCL_LogError("[CompressArchive] No files to archive. Note: Files with size 0 are not added to the archive.\n");
         return result;
     }
 
@@ -154,6 +186,7 @@ int YAAFCL_JobCompress(FILE* pOutput, YAAFCL_DirEntryStack* pFiles)
 
     /* for each file*/
     index = 0;
+    p_cur_node = pFiles->pNodes;
     while(p_cur_node)
     {
         const YAAFCL_DirEntry* p_entry = p_cur_node->pEntry;
@@ -162,6 +195,7 @@ int YAAFCL_JobCompress(FILE* pOutput, YAAFCL_DirEntryStack* pFiles)
         /* update manifest ptr */
         p_manifest_entries[index] = p_cur_node->pEntry;
         p_manifest_entries[index]->manifestInfo.offset = ftell(pOutput);
+        p_manifest_entries[index]->manifestInfo.flags |= YAAF_DEFAULT_COMPRESSION_BIT;
         /* write file header */
         bytes_written = fwrite(&file_hdr,1, sizeof(file_hdr), pOutput);
         if (bytes_written != sizeof(file_hdr))
@@ -239,7 +273,7 @@ int YAAFCL_JobCompress(FILE* pOutput, YAAFCL_DirEntryStack* pFiles)
     bytes_written = fwrite(&manifest, 1, sizeof(manifest), pOutput);
     if (bytes_written != sizeof(manifest))
     {
-        YAAFCL_LogError("[CompressArchive] Failed to write manifest");
+        YAAFCL_LogError("[CompressArchive] Failed to write manifest\n");
         goto fail;
     }
     result = YAAF_SUCCESS;
@@ -247,8 +281,9 @@ fail:
     YAAF_free(p_manifest_entries);
     return result;
 }
-/* --------------------------------------------------------------------------*/
-static int YAAFCL_DecompressFile(YAAF_File* pFile, const char* outPath)
+
+static int YAAFCL_DecompressFile(YAAF_File* pFile,
+                                 const char* outPath)
 {
     char buffer[1024];
     int result = YAAF_FAIL;
@@ -284,8 +319,11 @@ fail:
     }
     return result;
 }
-/* --------------------------------------------------------------------------*/
-int YAAFCL_JobDecompressArchive(const char* archive, const char* outDir, const int flags)
+
+int
+YAAFCL_JobDecompressArchive(const char* archive,
+                            const char* outDir,
+                            const int flags)
 {
     YAAF_Archive* p_archive = NULL;
     int result = YAAF_FAIL;
@@ -364,7 +402,7 @@ fail:
     YAAFCL_StrDestroy(&extract_dir);
     if (file_list)
     {
-        YAAF_ArchiveFreeList(p_archive, file_list);
+        YAAF_ArchiveFreeList(file_list);
     }
     if(p_archive)
     {
@@ -378,4 +416,4 @@ fail:
     return result;
 
 }
-/* --------------------------------------------------------------------------*/
+

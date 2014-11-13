@@ -23,7 +23,10 @@
 
 #include "YAAFCL_DirUtils.h"
 
-int YAAFCL_JobCompress(FILE* pOutput, YAAFCL_DirEntryStack *pFiles);
+int YAAFCL_JobCompress(FILE* pOutput,
+                       YAAFCL_DirEntryStack *pFiles);
 
-int YAAFCL_JobDecompressArchive(const char *archive, const char* outDir, const int flags);
+int YAAFCL_JobDecompressArchive(const char *archive,
+                                const char* outDir,
+                                const int flags);
 #endif

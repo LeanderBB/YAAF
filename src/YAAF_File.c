@@ -75,7 +75,7 @@ YAAF_FileCreate(const void *ptr,
         p_result->nBytesRead  = 0;
 
         /* create decompressor */
-        if (YAAF_DecompressorCreate(&p_result->decompressor, pManifestEntry->flags & YAAF_SUPPORTED_COMPRESSIONS)
+        if (YAAF_DecompressorCreate(&p_result->decompressor, pManifestEntry->flags & YAAF_SUPPORTED_COMPRESSIONS_MASK)
                 != YAAF_SUCCESS)
         {
             YAAF_free(p_result);

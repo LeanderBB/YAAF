@@ -38,10 +38,9 @@
 #define YAAF_FAIL (-1)
 #define YAAF_SUCCESS (0)
 
-YAAF_EXPORT const char* YAAF_CALL YAAF_GetError();
-
-/* Use this to replace the default allocator with an allocator
- * of your choosing
+/**
+ * This struct holds all the functions required to replace the default system
+ * allocator used by YAAF.
  */
 typedef struct YAAF_Allocator
 {
@@ -50,78 +49,157 @@ typedef struct YAAF_Allocator
     void* (*calloc)(size_t, size_t);
 } YAAF_Allocator;
 
-#pragma pack(push)
-#pragma pack(1)
-/* representation of date time in the archive */
-struct YAAF_DateTime
-{
-    uint8_t sec;
-    uint8_t min;
-    uint8_t hour;
-    uint8_t day;
-    uint8_t month;
-    uint8_t year;
-};
-#pragma pack(pop)
 
-/* File Info */
-
+/**
+ * YAAF_FileInfo holds information about a file in the archive. Currently we
+ * provide information about the file's last modification date, its compressed
+ * size and uncompressed size.
+ */
 typedef struct
 {
-    struct YAAF_DateTime lastModification;
+    time_t lastModification;
     uint32_t sizeCompressed;
     uint32_t sizeUncompressed;
 } YAAF_FileInfo;
 
-/* YAAF Archive */
+/**
+ * YAAF_Archive holds all the information regarding the archive.
+ * It is provided as a forwad declaration in order to handle future abstractions
+ * (e.g.: 32bit and 64bit versions).
+ */
 struct YAAF_Archive;
 typedef struct YAAF_Archive YAAF_Archive;
 
-/* YAAF Archive file handle */
+/**
+ * YAAF_File is a representation of a file in the archive
+ * It is also provided as a forward declaration in order to abstract different
+ * implentations.
+ */
 struct YAAF_File;
 typedef struct YAAF_File YAAF_File;
 
+/**
+ * YAAF archives use the slasch character as a path separator. Note also that
+ * there is no root separator. If , for instance, in the root of the archive
+ * there was a folder name Foo and insied a file named Bar, the full path to
+ * access Bar in the archive would be "Foo/Bar".
+ */
 #define YAAF_ARCHIVE_SEP_CHR '/'
 #define YAAF_ARCHIVE_SEP_STR "/"
 
+/* YAAF API */
+
+/**
+ * Intialize the internal state of YAAF.
+ * @param pAlloc Ptr to a YAAF_Allocator struct to replace the default system
+ * allocator. Pass NULL to use the default allocator.
+ * @note Function points of YAAF_Allocator are copied, so the original struct
+ * can be released after this call.
+ * @return YAAF_FAIL on failure, otheriwse YAAF_SUCCESS.
+ */
 YAAF_EXPORT int YAAF_CALL YAAF_Init(const YAAF_Allocator* pAlloc);
 
+/**
+ * Destroy the interal state of YAAF.
+ * @note Be sure to call this after all archives have been closed. Failing to do
+ * so will result in errors.
+ */
 YAAF_EXPORT void YAAF_CALL YAAF_Shutdown();
 
+/**
+ * Get the current error message. The error message is stored locally to each.
+ * Use this call to get more information about a failure in the YAAF API.
+ * @return Error message or NULL when no error message is available.
+ */
+YAAF_EXPORT const char* YAAF_CALL YAAF_GetError();
+
+/* YAAF Arhcive API */
+
+/**
+ * Open an archive at a given path.
+ * @return NULL on failure, otherwise a pointer to the loaded archive.
+ */
 YAAF_EXPORT YAAF_Archive* YAAF_CALL YAAF_ArchiveOpen(const char* path);
 
+/**
+ * Close an archive and free all resources associated to it.
+ */
 YAAF_EXPORT void YAAF_CALL YAAF_ArchiveClose(YAAF_Archive* pArchive);
 
+/**
+ * List all files in an archive.
+ * @return An array of string pointers with the last entry being a NULL ptr. Be
+ * sure to free this allocated list with YAAF_ArchiveFreeList();
+ */
 YAAF_EXPORT const char** YAAF_CALL YAAF_ArchiveListAll(YAAF_Archive* pArchive);
 
+/**
+ * List a directory in the archive.
+ *  * @return An array of string pointers with the last entry being a NULL ptr. Be
+ * sure to free this allocated list with YAAF_ArchiveFreeList();
+ */
 YAAF_EXPORT const char** YAAF_CALL YAAF_ArchiveListDir(YAAF_Archive* pArchive,
                                                        const char* dir);
+/**
+ * Free a list allocated by the YAAF_ArchiveList* functions.
+ */
+YAAF_EXPORT void YAAF_CALL YAAF_ArchiveFreeList(const char** pList);
 
-YAAF_EXPORT void YAAF_CALL YAAF_ArchiveFreeList(YAAF_Archive* pArchive,
-                                                const char** pList);
-
+/**
+ * Open a File stream for a file in the archive.
+ * @return NULL if file was not found or on failure.
+ */
 YAAF_EXPORT YAAF_File* YAAF_CALL YAAF_ArchiveFile(YAAF_Archive* pArchive,
                                                   const char* filePath);
 
+/**
+ * Retrieve information for a file in the archive.
+ * @return YAAF_FAIL if the files was not found, YAAF_SUCCESS otherwise.
+ */
 YAAF_EXPORT int YAAF_CALL YAAF_ArchiveFileInfo(YAAF_Archive* pArchive,
                                                const char* filePath,
                                                YAAF_FileInfo* pInfo);
-
+/**
+ * Check whether a file exists or not in the archive.
+ * @return YAAF_FAIL if the files was not found, YAAF_SUCCESS otherwise.
+ */
 YAAF_EXPORT int YAAF_CALL YAAF_ArchiveContains(const YAAF_Archive* pArchive,
                                                const char* file);
 
+
+/* YAAF File API */
+/**
+ * Read up to size bytes into pBuffer.
+ * @return Number of bytes read from the file.
+ */
 YAAF_EXPORT uint32_t YAAF_CALL YAAF_FileRead(YAAF_File* pFile,
                                              void* pBuffer,
                                              const uint32_t size);
 
+/**
+ * Seek to a position in the file stream. This function behaves the same ways
+ * as libc's fseek().
+ * @param flags Similar to C's file api, SEEK_SET, SEEK_CUR or SEEK_END
+ * @return YAAF_FAIL on failure. YAAF_SUCCESS ohtherwise.
+ */
 YAAF_EXPORT int YAAF_CALL YAAF_FileSeek(YAAF_File* pFile,
                                         int offset,
                                         int flags);
 
+/**
+ * Check whether we have reached the end of the file.
+ * @return 1 on EOF, 0 otherwise.
+ */
 YAAF_EXPORT int YAAF_CALL YAAF_FileEOF(const YAAF_File* pFile);
 
+/**
+ * Get the current position in the file.
+ */
 YAAF_EXPORT uint32_t YAAF_CALL YAAF_FileTell(const YAAF_File* pFile);
 
+/**
+ * Close the file stream.
+ */
 YAAF_EXPORT void YAAF_CALL YAAF_FileDestroy(YAAF_File* pFile);
 
 

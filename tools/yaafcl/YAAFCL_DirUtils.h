@@ -1,5 +1,5 @@
 /*
- * YAAFCL - Yet Another Archive Format Command Line 
+ * YAAFCL - Yet Another Archive Format Command Line
  * Copyright (c) 2014 Leander Beernaert
  *
  * YAAFCL is free software: you can redistribute it and/or modify
@@ -35,9 +35,9 @@
 /* --- Dir Entry ------------------------------------------------------------*/
 typedef struct
 {
-  YAAFCL_Str fullPath;
-  YAAFCL_Str archivePath;
-  YAAF_ManifestEntry manifestInfo;
+    YAAFCL_Str fullPath;
+    YAAFCL_Str archivePath;
+    YAAF_ManifestEntry manifestInfo;
 } YAAFCL_DirEntry;
 
 void YAAFCL_DirEntryInit(YAAFCL_DirEntry* pEntry);
@@ -48,14 +48,14 @@ void YAAFCL_DirEntryDestroy(YAAFCL_DirEntry* pEntry);
 
 typedef struct YAAFCL_SDirEntryStackNode
 {
-  YAAFCL_DirEntry* pEntry;
-  struct YAAFCL_SDirEntryStackNode* pNext;
+    YAAFCL_DirEntry* pEntry;
+    struct YAAFCL_SDirEntryStackNode* pNext;
 } YAAFCL_DirEntryStackNode;
 
 typedef struct
 {
-  size_t count;
-  YAAFCL_DirEntryStackNode* pNodes;
+    size_t count;
+    YAAFCL_DirEntryStackNode* pNodes;
 }YAAFCL_DirEntryStack;
 
 void YAAFCL_DirEntryStackInit(YAAFCL_DirEntryStack* pStack);
@@ -72,11 +72,12 @@ int YAAFCL_ScanDirectory(YAAFCL_DirEntryStack* pStack,
                          const char* directory, const int flags);
 
 int YAAFCL_AddFileToEntryStack(YAAFCL_DirEntryStack* pStack,
-                                      const char* file_path,
-                                      const char* file_name,
-                                      const char* start_path);
+                               const char* file_path,
+                               const char* file_name,
+                               const char* start_path);
 
-int YAAFCL_RealPath(YAAFCL_Str* pStr, const char* path);
+int YAAFCL_RealPath(YAAFCL_Str* pStr,
+                    const char* path);
 
 int YAAFCL_MakeDir(const char* path);
 
@@ -88,10 +89,12 @@ int YAAFCL_IsSymlink(const char* path);
 
 int YAAFCL_Exists(const char* path);
 
-void YAAFCL_ArchivePathToNativePath(YAAFCL_Str* pResult, const char* archivePath,
+void YAAFCL_ArchivePathToNativePath(YAAFCL_Str* pResult,
+                                    const char* archivePath,
                                     const char* extractPath);
 
-int YAAFCL_ValidateAndCreateExtractPath(const char* extractDir, const char* extractPath,
-                               const int allowOverwrite);
+int YAAFCL_ValidateAndCreateExtractPath(const char* extractDir,
+                                        const char* extractPath,
+                                        const int allowOverwrite);
 
 #endif

@@ -153,7 +153,7 @@ target_link_libraries(${YAAF_LIB_NAME} ${YAAF_LZ4_LIBRARY})
 install(TARGETS ${YAAF_LIB_NAME} DESTINATION lib)
 install(FILES ${YAAF_HDR} DESTINATION include/YAAF)
 
-if(NOT YAAF_EXCLUDE_TESTS)
+if(YAAF_BUILD_TESTS)
 add_subdirectory(test)
 endif()
 

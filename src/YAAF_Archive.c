@@ -147,9 +147,8 @@ YAAF_ArchiveListDir(YAAF_Archive* pArchive, const char* dir)
 }
 
 void
-YAAF_ArchiveFreeList(YAAF_Archive* pArchive, const char** pList)
+YAAF_ArchiveFreeList(const char** pList)
 {
-    (void) pArchive;
     if (pList)
     {
         YAAF_free((void*)pList);
@@ -217,7 +216,7 @@ YAAF_ArchiveParse(YAAF_Archive* pArchive,
         }
 
         /* check compression */
-        if (!(pManifEntry->flags & YAAF_SUPPORTED_COMPRESSIONS))
+        if (!(pManifEntry->flags & YAAF_SUPPORTED_COMPRESSIONS_MASK))
         {
             YAAF_SetError("Unsupported compression");
             return YAAF_FAIL;
@@ -298,7 +297,7 @@ YAAF_ArchiveFileInfo(YAAF_Archive* pArchive, const char* filePath,
     }
 
     /* copy info */
-    pInfo->lastModification = pArchive->pEntries[index]->lastModDateTime;
+    pInfo->lastModification = YAAF_ArchiveTimeToTime(&pArchive->pEntries[index]->lastModDateTime);
     pInfo->sizeCompressed = pArchive->pEntries[index]->sizeCompressed;
     pInfo->sizeUncompressed = pArchive->pEntries[index]->sizeUncompressed;
 

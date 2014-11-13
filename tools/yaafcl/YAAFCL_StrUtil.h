@@ -1,5 +1,5 @@
 /*
- * YAAFCL - Yet Another Archive Format Command Line 
+ * YAAFCL - Yet Another Archive Format Command Line
  * Copyright (c) 2014 Leander Beernaert
  *
  * YAAFCL is free software: you can redistribute it and/or modify
@@ -27,8 +27,8 @@
 
 typedef struct
 {
-  size_t len;
-  char* str;
+    size_t len;
+    char* str;
 } YAAFCL_Str;
 
 
@@ -37,52 +37,65 @@ void YAAFCL_StrInit(YAAFCL_Str* pStr);
 void YAAFCL_StrDestroy(YAAFCL_Str* pStr);
 
 void YAAFCL_StrResize(YAAFCL_Str* pStr, const size_t newSize,
-                             const int preserveContents);
+                      const int preserveContents);
 
-void YAAFCL_StrCopy(YAAFCL_Str* pStr, const YAAFCL_Str* pOther);
+void YAAFCL_StrCopy(YAAFCL_Str* pStr,
+                    const YAAFCL_Str* pOther);
 
-void YAAFCL_StrConcat(YAAFCL_Str* pStr, const char* other);
+void YAAFCL_StrConcat(YAAFCL_Str* pStr,
+                      const char* other);
 
-void YAAFCL_StrConcatStr(YAAFCL_Str* pStr, YAAFCL_Str* pOther);
+void YAAFCL_StrConcatStr(YAAFCL_Str* pStr,
+                         YAAFCL_Str* pOther);
 
-void YAAFCL_StrReplace(YAAFCL_Str* pStr, const char* oldStr, const char* newStr);
+void YAAFCL_StrReplace(YAAFCL_Str* pStr,
+                       const char* oldStr,
+                       const char* newStr);
 
 void YAAFCL_StrClear(YAAFCL_Str* pStr);
 
-void YAAFCL_StrJoinPath(YAAFCL_Str* pStr, const char* path1, const char* path2,
+void YAAFCL_StrJoinPath(YAAFCL_Str* pStr,
+                        const char* path1,
+                        const char* path2,
                         char sep);
 
-void YAAFCL_StrMove(YAAFCL_Str* pDst, YAAFCL_Str* pSrc);
+void YAAFCL_StrMove(YAAFCL_Str* pDst,
+                    YAAFCL_Str* pSrc);
 
-void YAAFCL_StrExtractPath(YAAFCL_Str* pPath, const YAAFCL_Str* pStr,
+void YAAFCL_StrExtractPath(YAAFCL_Str* pPath,
+                           const YAAFCL_Str* pStr,
                            const char sep);
 
-void YAAFCL_StrExtractName( YAAFCL_Str* pPath, const YAAFCL_Str* pStr,
-                           const char sep);
+void YAAFCL_StrExtractName( YAAFCL_Str* pPath,
+                            const YAAFCL_Str* pStr,
+                            const char sep);
 /* --- String List ---------------------------------------------------------*/
 
 typedef struct YAAFCL_SStrListNode
 {
-  YAAFCL_Str string;
-  struct YAAFCL_SStrListNode* pNext;
+    YAAFCL_Str string;
+    struct YAAFCL_SStrListNode* pNext;
 } YAAFCL_StrListNode;
 
 typedef struct
 {
-  YAAFCL_StrListNode* pHead;
-  YAAFCL_StrListNode* pTail;
-  size_t count;
+    YAAFCL_StrListNode* pHead;
+    YAAFCL_StrListNode* pTail;
+    size_t count;
 } YAAFCL_StrList;
 
 void YAAFCL_StrListInit(YAAFCL_StrList* pList);
 
 void YAAFCL_StrListDestroy(YAAFCL_StrList* pList);
 
-void YAAFCL_StrListPushBackCopy(YAAFCL_StrList* pList, const YAAFCL_Str* pStr);
+void YAAFCL_StrListPushBackCopy(YAAFCL_StrList* pList,
+                                const YAAFCL_Str* pStr);
 
-void YAAFCL_StrListPushBackMove(YAAFCL_StrList* pList, YAAFCL_Str* pStr);
+void YAAFCL_StrListPushBackMove(YAAFCL_StrList* pList,
+                                YAAFCL_Str* pStr);
 
-int YAAFCL_StrListPopHeadMove(YAAFCL_StrList* pList, YAAFCL_Str* pStr);
+int YAAFCL_StrListPopHeadMove(YAAFCL_StrList* pList,
+                              YAAFCL_Str* pStr);
 
 void YAAFCL_StrListPopHead(YAAFCL_StrList* pList);
 

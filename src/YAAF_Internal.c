@@ -139,3 +139,38 @@ YAAF_GetFileSize(size_t* out,
     return YAAF_FAIL;
 }
 
+int
+YAAF_TimeToArchiveTime(const time_t time,
+                       struct YAAF_DateTime* pDateTime)
+{
+    struct tm* p_time;
+
+    p_time = localtime(&time);
+    if (p_time)
+    {
+        pDateTime->day = p_time->tm_mday;
+        pDateTime->hour = p_time->tm_hour;
+        pDateTime->min = p_time->tm_min;
+        pDateTime->sec = p_time->tm_sec;
+        pDateTime->month = p_time->tm_mon + 1;
+        pDateTime->year = (1900 + p_time->tm_year) - 2000;
+    }
+    return (p_time) ? YAAF_SUCCESS : YAAF_FAIL;
+}
+
+time_t
+YAAF_ArchiveTimeToTime(const struct YAAF_DateTime* pDateTime)
+{
+    struct tm time;
+    memset(&time, 0, sizeof(time));
+
+    time.tm_mday = pDateTime->day;
+    time.tm_hour = pDateTime->hour;
+    time.tm_min = pDateTime->min;
+    time.tm_sec = pDateTime->sec;
+    time.tm_mon = pDateTime->month - 1;
+    time.tm_year =  pDateTime->year + 2000 - 1900;
+
+    return mktime(&time);
+}
+
