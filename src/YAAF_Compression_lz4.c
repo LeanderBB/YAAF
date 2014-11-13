@@ -35,13 +35,14 @@
 
 #include "lz4.h"
 #include "lz4hc.h"
+#include "xxhash.h"
 
 static int YAAF_CompressLZ4(void* pState,
                             const void* inbuffer,
                             const uint32_t insize,
                             void* outbuffer,
                             const uint32_t outsize,
-                            uint32_t *outWritten)
+                            YAAF_BlockHeader* pCompressResult)
 {
     (void) pState;
     if (outsize >= (uint32_t) LZ4_MAX_INPUT_SIZE)
@@ -66,12 +67,15 @@ static int YAAF_CompressLZ4(void* pState,
     {
         /* no compression */
         memcpy(outbuffer, inbuffer, insize);
-        *outWritten = YAAF_BLOCK_SIZE_BUILD(0, insize);
+        pCompressResult->size = YAAF_BLOCK_SIZE_BUILD(0, insize);
+        pCompressResult->hash = XXH32(inbuffer, insize, 0);
         return YAAF_COMPRESSION_OK;
     }
     else
     {
-        *outWritten = YAAF_BLOCK_SIZE_BUILD(1, bytes_compressed);
+
+        pCompressResult->size = YAAF_BLOCK_SIZE_BUILD(1, bytes_compressed);
+        pCompressResult->hash = XXH32(outbuffer, bytes_compressed, 0);
         return YAAF_COMPRESSION_OK;
     }
 }

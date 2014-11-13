@@ -34,6 +34,7 @@
 #include "YAAF_File.h"
 #include "YAAF_Internal.h"
 #include "YAAF_MemFile.h"
+#include "xxhash.h"
 
 
 /* Aux functions */
@@ -302,5 +303,108 @@ YAAF_ArchiveFileInfo(YAAF_Archive* pArchive, const char* filePath,
     pInfo->sizeUncompressed = pArchive->pEntries[index]->sizeUncompressed;
 
     return YAAF_SUCCESS;
+}
+
+static int
+YAAF_ArchiveCheckEntry(const YAAF_Archive* pArchive,
+                       const YAAF_ManifestEntry* pEntry)
+{
+    int result = YAAF_SUCCESS;
+    uint32_t offset = pEntry->offset + sizeof(YAAF_FileHeader);
+    const void* ptr = YAAF_CONST_PTR_OFFSET(pArchive->memFile.ptr, offset);
+    uint32_t hash_block, hash_uncompressed;
+    XXH32_state_t hash_state;
+    const YAAF_BlockHeader* block_header = (const YAAF_BlockHeader*)ptr;
+    YAAF_Decompressor dc;
+    char tmp_buffer[YAAF_BLOCK_SIZE];
+
+    /* create decompressor */
+    if (YAAF_DecompressorCreate(&dc, pEntry->flags & YAAF_SUPPORTED_COMPRESSIONS_MASK) == YAAF_FAIL)
+    {
+        YAAF_SetError("Failed to create decompressor");
+        return YAAF_FAIL;
+    }
+
+    XXH32_reset(&hash_state, 0);
+
+    while(block_header->size != 0)
+    {
+        uint32_t block_size = YAAF_BLOCK_SIZE_GET(block_header->size);
+        uint32_t uncompressed_size = 0;
+
+
+        offset += sizeof(YAAF_BlockHeader);
+        ptr = YAAF_CONST_PTR_OFFSET(pArchive->memFile.ptr, offset);
+
+        /* hash block */
+        hash_block = XXH32(ptr, block_size, 0);
+
+        /* check hash */
+        if (hash_block != block_header->hash)
+        {
+            YAAF_SetError("Block hash does not match");
+            result = YAAF_FAIL;
+            break;
+        }
+
+        /* if block hash matches, check uncompressed */
+        if (YAAF_BLOCK_SIZE_COMPRESSED(block_header->size))
+        {
+            if (YAAF_DecompressBlock(&dc, ptr, block_size, tmp_buffer, YAAF_BLOCK_SIZE,
+                                     &uncompressed_size) != YAAF_COMPRESSION_OK)
+            {
+                YAAF_SetError("Failed to decompress block");
+                result = YAAF_FAIL;
+                break;
+            }
+
+            /* update uncompressed hash */
+            if (XXH32_update(&hash_state, tmp_buffer, uncompressed_size) != XXH_OK)
+            {
+                YAAF_SetError("Failed to update uncompressed hash");
+                result = YAAF_FAIL;
+                break;
+            }
+        }
+        else
+        {
+            /* update uncompressed hash */
+            if (XXH32_update(&hash_state, ptr, block_size) != XXH_OK)
+            {
+                YAAF_SetError("Failed to update uncompressed hash");
+                result = YAAF_FAIL;
+                break;
+            }
+        }
+
+        /* update ptr */
+        offset += block_size;
+        ptr = YAAF_CONST_PTR_OFFSET(pArchive->memFile.ptr, offset);
+        block_header = (const YAAF_BlockHeader*)ptr;
+    }
+
+    hash_uncompressed = XXH32_digest(&hash_state);
+
+    if (hash_uncompressed != pEntry->hashUncompressed)
+    {
+        YAAF_SetError("Uncompressed hash does not match");
+        result = YAAF_FAIL;
+    }
+
+    YAAF_DecompressorDestroy(&dc);
+    return result;
+}
+
+int
+YAAF_ArchiveCheck(const YAAF_Archive* pArchive)
+{
+    int result = YAAF_SUCCESS;
+    uint32_t i = 0;
+
+    for (i = 0; i < pArchive->pManifest->nEntries && result == YAAF_SUCCESS; ++i)
+    {
+        result = YAAF_ArchiveCheckEntry(pArchive, pArchive->pEntries[i]);
+    }
+    return result;
 }
 

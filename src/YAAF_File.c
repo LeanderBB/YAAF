@@ -88,15 +88,15 @@ YAAF_FileCreate(const void *ptr,
 static int
 YAAF_FileDecompressNextBlock(YAAF_File* pFile)
 {
-    const uint32_t block_size = *(uint32_t*) YAAF_PTR_OFFSET(pFile->ptr, pFile->nBytesRead);
-    const uint32_t data_size = YAAF_BLOCK_SIZE_GET(block_size);
-    pFile->nBytesRead += sizeof(uint32_t);
+    const YAAF_BlockHeader* pCResult = (YAAF_BlockHeader*) YAAF_PTR_OFFSET(pFile->ptr, pFile->nBytesRead);
+    const uint32_t data_size = YAAF_BLOCK_SIZE_GET(pCResult->size);
+    pFile->nBytesRead += sizeof(YAAF_BlockHeader);
     pFile->cacheOffset = 0;
     /* check if there are more blocks available */
     if (data_size != 0)
     {
         /* decompress only if the block has been compressed */
-        if (YAAF_BLOCK_SIZE_COMPRESSED(block_size))
+        if (YAAF_BLOCK_SIZE_COMPRESSED(pCResult->size))
         {
             int res =YAAF_DecompressBlock(&pFile->decompressor,
                                           YAAF_PTR_OFFSET(pFile->ptr, pFile->nBytesRead),
@@ -199,7 +199,8 @@ YAAF_FileSeekSet(YAAF_File* pFile,
 {
     fflush(stdout);
     const void* ptr = YAAF_PTR_OFFSET(pFile->ptr, bytesRead);
-    uint32_t block_size = YAAF_BLOCK_SIZE_GET(*((uint32_t*) ptr));
+    const YAAF_BlockHeader* block_hdr = (const YAAF_BlockHeader*) ptr;
+    uint32_t block_size = YAAF_BLOCK_SIZE_GET(block_hdr->size);
     uint32_t ptr_offset = 0;
     const uint32_t skip_blocks = (uint32_t) offset / YAAF_BLOCK_SIZE;
     const uint32_t skip_bytes = (uint32_t) offset % YAAF_BLOCK_SIZE;
@@ -216,12 +217,13 @@ YAAF_FileSeekSet(YAAF_File* pFile,
     for (i = 0; i < skip_blocks && block_size != 0; ++i)
     {
         /* update ptr offset */
-        ptr_offset = sizeof(uint32_t) + block_size;
+        ptr_offset = sizeof(YAAF_BlockHeader) + block_size;
         pFile->nBytesRead += ptr_offset;
         ptr = YAAF_PTR_OFFSET(ptr, ptr_offset);
 
         /* next block size */
-        block_size = YAAF_BLOCK_SIZE_GET(*((uint32_t*) ptr));
+        block_hdr = (const YAAF_BlockHeader*) ptr;
+        block_size = YAAF_BLOCK_SIZE_GET(block_hdr->size);
 
         /* updated decode bytes */
         pFile->nBytesDecoded += YAAF_BLOCK_SIZE;

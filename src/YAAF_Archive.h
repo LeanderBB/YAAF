@@ -43,10 +43,14 @@
  *
  * [ YAAF_FileHeader 0      ]
  * [ YAAF File Data 0       ]
- *
+ *    [ Size of Block 0  ] 4 bytes
+ *    [ Hash of Block 0  ] 4 bytes
+ *    [ Data of Block 0  ]
+ *       ...
+ * [ End of File 0 Blocks   ] 8 bytes - all 0
  * [ YAAF_FileHeader N      ]
  * [ YAAF File Data N       ]
- *
+ *.....
  * [ YAAF Manifest Entry 0  ]
  * [ YAAF File Name 0       ]
  * [ YAAF File Extra 0      ]

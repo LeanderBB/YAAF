@@ -48,15 +48,21 @@ enum
 
 typedef struct
 {
+    uint32_t size;
+    uint32_t hash;
+}YAAF_BlockHeader;
+
+
+typedef struct
+{
     void* state;
     int (*compress)(void*,
                     const void*,
                     const uint32_t,
                     void*,
                     const uint32_t,
-                    uint32_t*);
+                    YAAF_BlockHeader*);
 } YAAF_Compressor;
-
 
 typedef struct
 {
@@ -68,7 +74,6 @@ typedef struct
                       const uint32_t,
                       uint32_t*);
 } YAAF_Decompressor;
-
 
 int YAAF_CompressorCreate(YAAF_Compressor* pCompressor,
                           const int type);
@@ -85,7 +90,7 @@ int YAAF_CompressBlock(YAAF_Compressor* pCompressor,
                        const uint32_t input_size,
                        void * output,
                        const uint32_t output_size,
-                       uint32_t* bytesWritten);
+                       YAAF_BlockHeader* compresResult);
 
 int YAAF_DecompressBlock(YAAF_Decompressor* pDecompressor,
                          const void * input,

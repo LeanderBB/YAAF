@@ -166,6 +166,14 @@ YAAF_EXPORT int YAAF_CALL YAAF_ArchiveFileInfo(YAAF_Archive* pArchive,
 YAAF_EXPORT int YAAF_CALL YAAF_ArchiveContains(const YAAF_Archive* pArchive,
                                                const char* file);
 
+/**
+ * Check the archive's contents and see if they match the stored hashes.
+ * For each entry this will check the hash for the compressed blocks as well
+ * as the uncompressed data.
+ * @note This is a slow operation, every file needs to be checked individually.
+ * @return YAAF_SUCCESS if everthing checks out, YAAF_FAIL otherwise.
+ */
+YAAF_EXPORT int YAAF_CALL YAAF_ArchiveCheck(const YAAF_Archive* pArchive);
 
 /* YAAF File API */
 /**

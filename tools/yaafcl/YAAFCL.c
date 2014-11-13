@@ -198,6 +198,41 @@ exit:
     return result;
 }
 
+
+static int
+YAAFCL_CheckArchive(const int argc,
+                   char** argv,
+                   const int flags)
+{
+    (void) flags;
+    int i = 0;
+    int result = YAAF_SUCCESS;
+    for ( ; i < argc && result == YAAF_SUCCESS; ++ i)
+    {
+        YAAF_Archive* p_archive = NULL;
+
+        p_archive = YAAF_ArchiveOpen(argv[i]);
+        if (!p_archive)
+        {
+            YAAFCL_LogError("[Check Archive] Failed to parse archive \"%s\"\n", argv[i]);
+            goto exit;
+        }
+
+        result = YAAF_ArchiveCheck(p_archive);
+        if (result == YAAF_FAIL)
+        {
+             YAAFCL_LogError("[Check Archive] Archive corrupted \"%s\": %s\n", argv[i], YAAF_GetError());
+        }
+exit:
+        if(p_archive)
+        {
+            YAAF_ArchiveClose(p_archive);
+        }
+    }
+    return result;
+}
+
+
 static int
 YAAFCL_ListArchiveDir(const int argc,
                       char** argv,
@@ -437,6 +472,10 @@ YAAFCL_ParseArgs(const int argc,
     {
         option = YAAFCL_OPTION_CREATE;
     }
+    else if (strcmp(argv[i], "-C") == 0)
+    {
+        option = YAAFCL_OPTION_CHECK;
+    }
     else if(strcmp(argv[i], "-E") == 0)
     {
         option = YAAFCL_OPTION_EXTRACT_ARCHIVE;
@@ -512,6 +551,8 @@ YAAFCL_ParseArgs(const int argc,
         return YAAFCL_CreateArchiveFromPaths(remaining_argc, argv + i, flags);
     case YAAFCL_OPTION_EXTRACT_ARCHIVE:
         return YAAFCL_ExtractArchive(remaining_argc, argv + i, flags);
+    case YAAFCL_OPTION_CHECK:
+        return YAAFCL_CheckArchive(remaining_argc, argv + i, flags);
     case YAAFCL_OPTION_EXTRACT_PATH:
         return YAAFCL_ExtractFile(remaining_argc, argv +i, flags);
     default:

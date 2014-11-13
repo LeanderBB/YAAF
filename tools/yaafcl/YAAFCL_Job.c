@@ -34,9 +34,10 @@ YAAFCL_CompressFile(FILE *pInput,
     char tmp_output[YAAF_BLOCK_CACHE_SIZE_WR];
     uint32_t file_size = 0, file_size_compressed = 0;
     int result = YAAF_FAIL;
-    uint32_t end_block = 0;
+    YAAF_BlockHeader end_block;
     XXH32_state_t hash_state;
 
+    memset(&end_block, 0, sizeof(end_block));
 
     if(YAAF_CompressorCreate(&c, pEntry->flags & YAAF_SUPPORTED_COMPRESSIONS_MASK) == YAAF_FAIL)
     {
@@ -50,7 +51,7 @@ YAAFCL_CompressFile(FILE *pInput,
     while (!feof(pInput))
     {
         uint32_t bytes_read;
-        uint32_t block_size;
+        YAAF_BlockHeader c_result;
 
         /* read input */
         bytes_read = fread(tmp_input, 1, YAAF_BLOCK_SIZE, pInput);
@@ -62,41 +63,41 @@ YAAFCL_CompressFile(FILE *pInput,
 
         /* compress block */
         if (YAAF_CompressBlock(&c, tmp_input, bytes_read, tmp_output,
-                               YAAF_BLOCK_CACHE_SIZE_WR, &block_size) != YAAF_COMPRESSION_OK)
+                               YAAF_BLOCK_CACHE_SIZE_WR, &c_result) != YAAF_COMPRESSION_OK)
         {
             YAAFCL_LogError("[Compress] Failed to compress block\n");
             goto cleanup;
         }
 
         /* write block size */
-        if (fwrite(&block_size, 1, sizeof(block_size), pOutput) != sizeof(uint32_t))
+        if (fwrite(&c_result, 1, sizeof(c_result), pOutput) != sizeof(YAAF_BlockHeader))
         {
             YAAFCL_LogError("[Compress] Failed to write block size\n");
             goto cleanup;
         }
 
         /* write compressed block */
-        if (fwrite(tmp_output, 1, YAAF_BLOCK_SIZE_GET(block_size), pOutput)
-                != YAAF_BLOCK_SIZE_GET(block_size))
+        if (fwrite(tmp_output, 1, YAAF_BLOCK_SIZE_GET(c_result.size), pOutput)
+                != YAAF_BLOCK_SIZE_GET(c_result.size))
         {
             YAAFCL_LogError("[Compress] Failed to write block\n");
             goto cleanup;
         }
 
         /* update hash */
-        if (XXH32_update(&hash_state, tmp_output, YAAF_BLOCK_SIZE_GET(block_size))
+        if (XXH32_update(&hash_state, tmp_input, bytes_read)
                 != XXH_OK)
         {
-            YAAFCL_LogError("[Compress] Failed to generate hash\n");
+            YAAFCL_LogError("[Compress] Failed to update hash\n");
             goto cleanup;
         }
 
         file_size += bytes_read;
-        file_size_compressed += YAAF_BLOCK_SIZE_GET(block_size) + sizeof(uint32_t);
+        file_size_compressed += YAAF_BLOCK_SIZE_GET(c_result.size) + sizeof(YAAF_BlockHeader);
     }
 
     /* write end of block */
-    if (fwrite(&end_block, 1, sizeof(end_block), pOutput) != sizeof(uint32_t))
+    if (fwrite(&end_block, 1, sizeof(end_block), pOutput) != sizeof(YAAF_BlockHeader))
     {
         YAAFCL_LogError("[Compress] Failed to write end block\n");
         goto cleanup;

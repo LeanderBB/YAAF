@@ -91,10 +91,10 @@ YAAF_CompressBlock(YAAF_Compressor* pCompressor,
                    const uint32_t input_size,
                    void * output,
                    const uint32_t output_size,
-                   uint32_t* bytesWritten)
+                   YAAF_BlockHeader *compresResult)
 {
     return pCompressor->compress(pCompressor->state, input, input_size,
-                                 output, output_size, bytesWritten);
+                                 output, output_size, compresResult);
 }
 
 int

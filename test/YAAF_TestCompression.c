@@ -33,14 +33,14 @@ Test_CompressBlock(YAAF_Compressor* pCompressor,
                    unsigned int inputSize,
                    void* output)
 {
-    uint32_t* bytes_written = (uint32_t*)output;
-    output = YAAF_PTR_OFFSET(output, sizeof(uint32_t));
+    YAAF_BlockHeader* bytes_written = (YAAF_BlockHeader*)output;
+    output = YAAF_PTR_OFFSET(output, sizeof(YAAF_BlockHeader));
     int result = YAAF_CompressBlock(pCompressor, input, inputSize,
                                     output, YAAF_BLOCK_CACHE_SIZE_WR,
                                     bytes_written);
     if (result == YAAF_COMPRESSION_OK)
     {
-        return YAAF_BLOCK_SIZE_GET((*bytes_written)) + sizeof(uint32_t);
+        return YAAF_BLOCK_SIZE_GET((bytes_written->size)) + sizeof(YAAF_BlockHeader);
     }
     else
     {
@@ -74,9 +74,10 @@ Test_CompressFile(const char* path)
     uint32_t i = 0;
     YAAF_MemFile mem_file;
     YAAF_ManifestEntry entry_hdr;
+    YAAF_BlockHeader end_block;
 
     memset(&mem_file, 0, sizeof(mem_file));
-
+    memset(&end_block, 0, sizeof(end_block));
     /* get file size */
 
     if (YAAF_GetFileSize(&file_size, path) == YAAF_FAIL)
@@ -154,7 +155,7 @@ Test_CompressFile(const char* path)
         compressed_size += bytes_written;
     }
     i = 0;
-    if (fwrite(&i, 1, sizeof(uint32_t), p_output) != sizeof(uint32_t))
+    if (fwrite(&end_block, 1, sizeof(end_block), p_output) != sizeof(end_block))
     {
         fprintf(stderr, "Failed to write end block to output file \n");
         goto cleanup;
