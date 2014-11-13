@@ -33,13 +33,11 @@
 #include "YAAF_File.h"
 #include "YAAF_Archive.h"
 #include "YAAF_Internal.h"
+#include "YAAF_Archive.h"
 
 YAAF_File*
 YAAF_FileCreate(const void *ptr,
-                const uint32_t offset,
-                const uint32_t sizeCompressed,
-                const uint32_t fileSize,
-                const int compressor)
+                const struct YAAF_ManifestEntry * pManifestEntry)
 {
 
     YAAF_File* p_result = NULL;
@@ -49,7 +47,7 @@ YAAF_FileCreate(const void *ptr,
     }
 
     const char* chr_ptr = (const char*) ptr;
-    chr_ptr += offset;
+    chr_ptr += pManifestEntry->offset;
 
     /* Read file header */
 
@@ -72,12 +70,13 @@ YAAF_FileCreate(const void *ptr,
     {
         memset(p_result, 0, sizeof(YAAF_File));
         p_result->ptr = chr_ptr;
-        p_result->nBytesUncompressed = fileSize;
-        p_result->nBytesCompressed = sizeCompressed;
+        p_result->nBytesUncompressed = pManifestEntry->sizeUncompressed;
+        p_result->nBytesCompressed = pManifestEntry->sizeCompressed;
         p_result->nBytesRead  = 0;
 
         /* create decompressor */
-        if (YAAF_DecompressorCreate(&p_result->decompressor, compressor) != YAAF_SUCCESS)
+        if (YAAF_DecompressorCreate(&p_result->decompressor, pManifestEntry->flags & YAAF_SUPPORTED_COMPRESSIONS)
+                != YAAF_SUCCESS)
         {
             YAAF_free(p_result);
             p_result = NULL;

@@ -36,6 +36,8 @@
 #include "YAAF_Internal.h"
 #include "YAAF_Compression.h"
 
+struct YAAF_ManifestEntry;
+
 struct YAAF_File
 {
   const void* ptr;
@@ -51,8 +53,5 @@ struct YAAF_File
 };
 
 YAAF_File* YAAF_FileCreate(const void* ptr,
-                           const uint32_t offset,
-                           const uint32_t sizeCompressed,
-                           const uint32_t fileSize,
-                           const int compressor);
+                           const struct YAAF_ManifestEntry * pManifestEnt);
 #endif

@@ -40,6 +40,7 @@
 #define YAAF_BLOCK_CACHE_SIZE_WR (YAAF_BLOCK_SIZE + (8 * 1024))
 
 #define YAAF_PTR_OFFSET(ptr, offset) (((char*)ptr) + offset)
+#define YAAF_CONST_PTR_OFFSET(ptr, offset) (((const char*)ptr) + offset)
 
 enum
 {

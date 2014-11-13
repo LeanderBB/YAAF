@@ -73,6 +73,7 @@ Test_CompressFile(const char* path)
     uint32_t compressed_size = 0;
     uint32_t i = 0;
     YAAF_MemFile mem_file;
+    YAAF_ManifestEntry entry_hdr;
 
     memset(&mem_file, 0, sizeof(mem_file));
 
@@ -172,8 +173,13 @@ Test_CompressFile(const char* path)
     }
 
     /* read back compressed file and compare with original */
-    p_yfile = YAAF_FileCreate(mem_file.ptr, 0, compressed_size, file_size,
-                              YAAF_COMPRESSION_LZ4_BIT);
+
+    memset(&entry_hdr, 0, sizeof(entry_hdr));
+    entry_hdr.sizeCompressed = compressed_size;
+    entry_hdr.sizeUncompressed = file_size;
+    entry_hdr.offset = 0;
+    entry_hdr.flags = YAAF_COMPRESSION_LZ4_BIT;
+    p_yfile = YAAF_FileCreate(mem_file.ptr, &entry_hdr);
 
     if (!p_yfile)
     {

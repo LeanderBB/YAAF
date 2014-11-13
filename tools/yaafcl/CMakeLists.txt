@@ -17,6 +17,6 @@ add_executable(yaafcl
   YAAFCL_Job.h
   YAAFCL_Job.c
 )
-target_link_libraries(yaafcl ${YAAF_LIB_NAME})
+target_link_libraries(yaafcl ${YAAF_LIBRARIES})
 
 install(TARGETS yaafcl DESTINATION bin)

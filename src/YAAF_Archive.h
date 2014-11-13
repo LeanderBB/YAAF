@@ -109,7 +109,7 @@ struct YAAF_Archive
 {
   YAAF_MemFile memFile;
   const YAAF_Manifest* pManifest;
-  const YAAF_ManifestEntry* pEntries;
+  const YAAF_ManifestEntry** pEntries;
 };
 
 

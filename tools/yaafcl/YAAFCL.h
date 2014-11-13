@@ -26,8 +26,8 @@
 #include "YAAFCL_StrUtil.h"
 #include "YAAF_Internal.h"
 
-#define YAAFCL_VERSION_MAJOR 0
-#define YAAFCL_VERSION_MINOR 8
+#define YAAFCL_VERSION_MAJOR 1
+#define YAAFCL_VERSION_MINOR 0
 #define YAAFCL_VERSION_PATCH 0
 
 enum YAAFCL_EOptions

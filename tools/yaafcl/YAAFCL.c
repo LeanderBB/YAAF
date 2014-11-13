@@ -162,21 +162,8 @@ static int YAAFCL_ListArchive(const int argc, char** argv, const int flags)
   for ( ; i < argc && result == YAAF_SUCCESS; ++ i)
   {
     YAAF_Archive* p_archive = NULL;
-    YAAF_Stream input;
-    result = YAAF_FAIL;
-    if (YAAF_StreamFromFOpen(&input, argv[i], "rb") != YAAF_SUCCESS)
-    {
-      if (!(flags & YAAFCL_SWITCH_QUIET_BIT))
-      {
-        if (!(flags & YAAFCL_SWITCH_QUIET_BIT))
-        {
-          YAAFCL_LogError("[List Archive] Failed to open \"%s\"\n", argv[i]);
-        }
-      }
-      break;
-    }
 
-    p_archive = YAAF_ArchiveOpen(&input);
+    p_archive = YAAF_ArchiveOpen(argv[i]);
     if (!p_archive)
     {
       if (!(flags & YAAFCL_SWITCH_QUIET_BIT))
@@ -208,7 +195,6 @@ exit:
     {
       YAAF_ArchiveClose(p_archive);
     }
-    input.close(input.pStreamData);
   }
   return result;
 }
@@ -224,21 +210,8 @@ static int YAAFCL_ListArchiveDir(const int argc, char** argv, const int flags)
   }
 
   YAAF_Archive* p_archive = NULL;
-  YAAF_Stream input;
-  result = YAAF_FAIL;
-  if (YAAF_StreamFromFOpen(&input, argv[0], "rb") != YAAF_SUCCESS)
-  {
-    if (!(flags & YAAFCL_SWITCH_QUIET_BIT))
-    {
-      if (!(flags & YAAFCL_SWITCH_QUIET_BIT))
-      {
-        YAAFCL_LogError("[List ArchiveDir] Failed to open \"%s\"\n", argv[0]);
-      }
-    }
-    return YAAF_FAIL;
-  }
 
-  p_archive = YAAF_ArchiveOpen(&input);
+  p_archive = YAAF_ArchiveOpen(argv[0]);
   if (!p_archive)
   {
     if (!(flags & YAAFCL_SWITCH_QUIET_BIT))
@@ -272,7 +245,6 @@ exit:
   {
     YAAF_ArchiveClose(p_archive);
   }
-  input.close(input.pStreamData);
 
   return result;
 }
@@ -291,7 +263,6 @@ static int YAAFCL_ExtractArchive(const int argc, char** argv, const int flags)
 static int YAAFCL_ExtractFile(const int argc, char** argv, const int flags)
 {  
   YAAF_Archive* p_archive = NULL;
-  YAAF_Stream input;
   int result = YAAF_FAIL;
   YAAF_File* p_file = NULL;
   FILE* p_fout = NULL;
@@ -303,13 +274,7 @@ static int YAAFCL_ExtractFile(const int argc, char** argv, const int flags)
     return YAAF_FAIL;
   }
 
-  if (YAAF_StreamFromFOpen(&input, argv[0], "rb") != YAAF_SUCCESS)
-  {
-    YAAFCL_LogError("[Extract File] Failed to open archive file \"%s\"", argv[0]);
-    return YAAF_FAIL;
-  }
-
-  p_archive = YAAF_ArchiveOpen(&input);
+  p_archive = YAAF_ArchiveOpen(argv[0]);
   if (!p_archive)
   {
     YAAFCL_LogError("[Extract File] Failed to parse archive \"%s\" - %s\n", argv[0], YAAF_GetError());
@@ -319,7 +284,7 @@ static int YAAFCL_ExtractFile(const int argc, char** argv, const int flags)
   result = YAAF_SUCCESS;
   for (i = 2; i < argc && result == YAAF_SUCCESS; ++i)
   {
-    p_file = YAAF_ArchiveFile(p_archive,&input, argv[i]);
+    p_file = YAAF_ArchiveFile(p_archive, argv[i]);
     if (p_file)
     {
       YAAFCL_Str out_path;
@@ -369,7 +334,7 @@ static int YAAFCL_ExtractFile(const int argc, char** argv, const int flags)
           }
         }
       }
-      YAAF_FileClose(p_file);
+      YAAF_FileDestroy(p_file);
       fclose(p_fout);
       p_fout = NULL;
       p_file = NULL;
@@ -389,13 +354,13 @@ exit:
   }
   if (p_file)
   {
-    YAAF_FileClose(p_file);
+    YAAF_FileDestroy(p_file);
   }
   if (p_fout)
   {
     fclose(p_fout);
   }
-  input.close(input.pStreamData);
+
   return result;
 }
 /* --------------------------------------------------------------------------*/
@@ -551,12 +516,13 @@ static int YAAFCL_ParseArgs(const int argc, char** argv)
 /* --------------------------------------------------------------------------*/
 int main(int argc, char** argv)
 {
-  YAAF_Allocator allocator;
-  allocator.malloc = malloc;
-  allocator.calloc = calloc;
-  allocator.free = free;
-  YAAF_SetAllocator(&allocator);
-  (void) YAAFCL_ExtractFile;
+  if (YAAF_FAIL == YAAF_Init(NULL))
+  {
+      fprintf(stderr,"%s - Failed to init YAAF\n", argv[0]);
+      return EXIT_FAILURE;
+  }
+  int res = YAAFCL_ParseArgs(argc, argv);
 
-  return YAAFCL_ParseArgs(argc, argv) == YAAF_SUCCESS ? EXIT_SUCCESS : EXIT_FAILURE;
+  YAAF_Shutdown();
+  return (res == YAAF_SUCCESS) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

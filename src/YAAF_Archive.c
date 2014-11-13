@@ -75,6 +75,10 @@ YAAF_ArchiveClose(YAAF_Archive* pArchive)
 {
     if (pArchive)
     {
+        if (pArchive->pEntries)
+        {
+            YAAF_free(pArchive->pEntries);
+        }
         YAAF_MemFileClose(&pArchive->memFile);
         YAAF_free(pArchive);
     }
@@ -89,7 +93,7 @@ YAAF_ArchiveListAll(YAAF_Archive* pArchive)
         size_t i;
         for (i = 0; i < pArchive->pManifest->nEntries; ++i)
         {
-            p_result[i] = YAAF_ManifestEntryName(&pArchive->pEntries[i]);
+            p_result[i] = YAAF_ManifestEntryName(pArchive->pEntries[i]);
         }
         p_result[i] = NULL;
     }
@@ -112,7 +116,7 @@ YAAF_ArchiveListDir(YAAF_Archive* pArchive, const char* dir)
         {
             for (i = 0; i < pArchive->pManifest->nEntries; ++i)
             {
-                const char* entry_name = YAAF_ManifestEntryName(&pArchive->pEntries[i]);
+                const char* entry_name = YAAF_ManifestEntryName(pArchive->pEntries[i]);
                 if (strncmp(entry_name, dir, dir_len) == 0 &&
                         (entry_name[dir_len] == YAAF_ARCHIVE_SEP_CHR || dir[dir_len - 1] == YAAF_ARCHIVE_SEP_CHR))
                 {
@@ -125,7 +129,7 @@ YAAF_ArchiveListDir(YAAF_Archive* pArchive, const char* dir)
         {
             for (i = 0; i < pArchive->pManifest->nEntries; ++i)
             {
-                const char* entry_name = YAAF_ManifestEntryName(&pArchive->pEntries[i]);
+                const char* entry_name = YAAF_ManifestEntryName(pArchive->pEntries[i]);
                 if (!YAAF_StrContainsChr(entry_name, YAAF_ARCHIVE_SEP_CHR))
                 {
                     p_result[result_i] = entry_name;
@@ -167,7 +171,9 @@ YAAF_ArchiveParse(YAAF_Archive* pArchive,
     size_t manifest_offset = 0;
     size_t entries_offset = 0;
     size_t cur_offset = 0;
+    const void* tmp_ptr = NULL;
     uint32_t i;
+
 
     if (YAAF_MemFileOpen(&pArchive->memFile, path) == YAAF_FAIL)
     {
@@ -194,12 +200,15 @@ YAAF_ArchiveParse(YAAF_Archive* pArchive,
 
     /* Go to the manifest entry start */
     entries_offset = manifest_offset - pArchive->pManifest->manifestEntriesSize;
-    pArchive->pEntries = (const YAAF_ManifestEntry*) YAAF_PTR_OFFSET(pArchive->memFile.ptr, entries_offset);
+    tmp_ptr = (const YAAF_ManifestEntry*) YAAF_CONST_PTR_OFFSET(pArchive->memFile.ptr, entries_offset);
+
+    pArchive->pEntries = YAAF_malloc(sizeof(void*) * pArchive->pManifest->nEntries);
 
     /* Validate entries */
     for (i = 0; i < pArchive->pManifest->nEntries; ++i)
     {
-        const YAAF_ManifestEntry* pManifEntry = pArchive->pEntries + i;
+        const YAAF_ManifestEntry* pManifEntry = (const YAAF_ManifestEntry*) YAAF_CONST_PTR_OFFSET(tmp_ptr, cur_offset);
+
         /* validate entry magic */
         if (pManifEntry->magic != YAAF_MANIFEST_ENTRY_MAGIC)
         {
@@ -213,6 +222,9 @@ YAAF_ArchiveParse(YAAF_Archive* pArchive,
             YAAF_SetError("Unsupported compression");
             return YAAF_FAIL;
         }
+
+        /* register entry */
+        pArchive->pEntries[i] = pManifEntry;
 
         /* calculate offset for the next entry */
         cur_offset += sizeof(struct YAAF_ManifestEntry) + pManifEntry->nameLen +
@@ -231,7 +243,7 @@ YAAF_ArchiveLocateFile(const YAAF_Archive* pArchive, const char* file)
     while (end - start >= 1)
     {
         curr = start + ((end - start) / 2);
-        p_entry_name = YAAF_ManifestEntryName(&pArchive->pEntries[curr]);
+        p_entry_name = YAAF_ManifestEntryName(pArchive->pEntries[curr]);
         int cmp = YAAF_StrCompareNoCase(file, p_entry_name);
         if (cmp < 0)
         {
@@ -269,11 +281,7 @@ YAAF_ArchiveFile(YAAF_Archive* pArchive,
 
     /* Open the file */
 
-    return  YAAF_FileCreate(pArchive->memFile.ptr,
-                            pArchive->pEntries[index].offset,
-                            pArchive->pEntries[index].sizeCompressed,
-                            pArchive->pEntries[index].sizeUncompressed,
-                            YAAF_COMPRESSION_LZ4_BIT);
+    return  YAAF_FileCreate(pArchive->memFile.ptr, pArchive->pEntries[index]);
 }
 
 int
@@ -290,9 +298,9 @@ YAAF_ArchiveFileInfo(YAAF_Archive* pArchive, const char* filePath,
     }
 
     /* copy info */
-    pInfo->lastModification = pArchive->pEntries[index].lastModDateTime;
-    pInfo->sizeCompressed = pArchive->pEntries[index].sizeCompressed;
-    pInfo->sizeUncompressed = pArchive->pEntries[index].sizeUncompressed;
+    pInfo->lastModification = pArchive->pEntries[index]->lastModDateTime;
+    pInfo->sizeCompressed = pArchive->pEntries[index]->sizeCompressed;
+    pInfo->sizeUncompressed = pArchive->pEntries[index]->sizeUncompressed;
 
     return YAAF_SUCCESS;
 }

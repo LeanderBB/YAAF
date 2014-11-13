@@ -159,6 +159,6 @@ endif()
 
 
 if(NOT YAAF_EXCLUDE_TOOLS)
-#add_subdirectory(tools/yaafcl)
+add_subdirectory(tools/yaafcl)
 endif()
 
