@@ -99,10 +99,12 @@ find_package(Threads REQUIRED)
 ################################################################################
 # 3rd party libs
 ################################################################################
-add_subdirectory(3rdparty)
 
 set(YAAF_USE_COMPRESSION_LZ4 1)
 set(YAAF_USE_HASH_XXHASH 1)
+
+add_subdirectory(3rdparty)
+
 
 ################################################################################
 # LIB Settings
@@ -162,6 +164,8 @@ add_library(${YAAF_LIB_NAME} ${YAAF_SRC} ${YAAF_HDR} ${YAAF_INTERNAL_HDR})
 set(YAAF_LIBRARIES ${YAAF_LIB_NAME} ${YAAF_LZ4_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 
 target_link_libraries(${YAAF_LIB_NAME} ${YAAF_LZ4_LIBRARY})
+
+add_dependencies(${YAAF_LIB_NAME} lz4)
 
 install(TARGETS ${YAAF_LIB_NAME} DESTINATION lib)
 install(FILES ${YAAF_HDR} DESTINATION include/YAAF)
