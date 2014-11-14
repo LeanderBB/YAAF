@@ -4,53 +4,52 @@
 project(YAAF C)
 cmake_minimum_required(VERSION 2.8)
 
+
+################################################################################
+# Options
+################################################################################
+
+# use LZ4 as defualt compression algorithm (can't be changed atm)
+set(YAAF_USE_COMPRESSION_LZ4 1)
+
+# use XXHASH as default hashing algorithm (can't be changed atm)
+set(YAAF_USE_HASH_XXHASH 1)
+
+option(YAAF_BUILD_SHARED_LIB "Build the shared library version of YAAF" NO)
+
 ################################################################################
 # Compiler flags
 ################################################################################
 
-if("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
-    if((UNIX) AND (NOT APPLE))
-        set(YAAF_C_COMPILER_EXTRA "-D_GNU_SOURCE")
-    endif()
-endif()
-
 if(NOT MSVC)
+set(YAAF_SHARED_C_FLAGS "-fPIC")
+
 set(YAFF_C_WERROR "-Werror")
+
 set(YAAF_C_WARNING_FLAGS "-Wall -Wextra -Winit-self -Wuninitialized -Wmissing-declarations -pedantic -fvisibility=hidden")
-set(YAAF_CXX_WARNING_FLAGS "-Woverloaded-virtual")
 
 set(YAAF_C_COMPILE_FLAGS "-std=c99 ${YAAF_C_COMPILER_EXTRA}")
-set(YAAF_CXX_COMPILE_FLAGS "-std=c++11 -fno-exceptions -fno-rtti")
 
 set(YAAF_C_COMPILE_FLAGS_DEBUG "-g -O0 -fno-inline -DYAAF_DEBUG")
-set(YAAF_CXX_COMPILE_FLAGS_DEBUG "-g -O0 -fno-inline -DYAAF_DEBUG")
 
 set(YAAF_C_COMPILE_FLAGS_RELEASE "-O3 -g")
-set(YAAF_CXX_COMPILE_FLAGS_RELEASE "-O3 -g")
 
 else()
+
 set(YAFF_C_WERROR )
+
 set(YAAF_C_WARNING_FLAGS )
-set(YAAF_CXX_WARNING_FLAGS )
 
 set(YAAF_C_COMPILE_FLAGS "${YAAF_C_COMPILER_EXTRA}")
-set(YAAF_CXX_COMPILE_FLAGS )
 
 set(YAAF_C_COMPILE_FLAGS_DEBUG "/DYAAF_DEBUG")
-set(YAAF_CXX_COMPILE_FLAGS_DEBUG "/DYAAF_DEBUG")
 
 set(YAAF_C_COMPILE_FLAGS_RELEASE )
-set(YAAF_CXX_COMPILE_FLAGS_RELEASE )
 endif()
 
 set(CMAKE_C_FLAGS "${YAAF_C_WARNING_FLAGS} ${YAAF_C_COMPILE_FLAGS}")
-set(CMAKE_CXX_FLAGS "${YAAF_C_WARNING_FLAGS} ${YAAF_CXX_WARNING_FLAGS} ${YAAF_CXX_COMPILE_FLAGS}")
-
 set(CMAKE_C_FLAGS_RELEASE "${YAAF_C_COMPILE_FLAGS_RELEASE}")
-set(CMAKE_CXX_FLAGS_RELEASE "${YAAF_CXX_COMPILE_FLAGS_RELEASE}")
-
 set(CMAKE_C_FLAGS_DEBUG "${YAAF_C_COMPILE_FLAGS_DEBUG}")
-set(CMAKE_CXX_FLAGS_DEBUG "${YAAF_CXX_COMPILE_FLAGS_DEBUG}")
 
 ################################################################################
 # Header Tests
@@ -100,85 +99,17 @@ find_package(Threads REQUIRED)
 # 3rd party libs
 ################################################################################
 
-set(YAAF_USE_COMPRESSION_LZ4 1)
-set(YAAF_USE_HASH_XXHASH 1)
-
 add_subdirectory(3rdparty)
 
 
-################################################################################
-# LIB Settings
-################################################################################
-set(CMAKE_C_FLAGS "${YAAF_C_WARNING_FLAGS} ${YAAF_C_COMPILE_FLAGS} ${YAFF_C_WERROR}")
+add_subdirectory(libyaaf)
 
-set(YAAF_LIB_NAME YAAF)
-set(YAAF_CONFIG_HEADER_DIR ${PROJECT_BINARY_DIR}/build_config)
-set(YAAF_CONFIG_FILE "${YAAF_CONFIG_HEADER_DIR}/YAAF_Config.h")
-
-configure_file("${PROJECT_SOURCE_DIR}/cmake/YAAF_Config.cmake"
-               "${YAAF_CONFIG_FILE}")
-
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/src
-  ${YAAF_CONFIG_HEADER_DIR}
-  ${YAAF_LZ4_INCLUDE_DIR}
-)
-
-
-
-################################################################################
-# Sources
-################################################################################
-set(YAAF_HDR
-  include/YAAF_Setup.h
-  include/YAAF.h
-  ${YAAF_CONFIG_FILE}
-)
-
-set(YAAF_INTERNAL_HDR
-  src/YAAF_Archive.h
-  src/YAAF_File.h
-  src/YAAF_Internal.h
-  src/YAAF_MemFile.h
-  src/YAAF_Compression.h
-  src/YAAF_Compression_lz4.h
-  src/YAAF_Hash.h
-  src/YAAF_Hash_xxhash.h
-)
-
-
-set(YAAF_SRC
-  src/YAAF_Archive.c
-  src/YAAF_File.c
-  src/YAAF_Internal.c
-  src/YAAF_MemFile.c
-  src/YAAF_TLS.c
-  src/YAAF_Compression.c
-  src/YAAF_Compression_lz4.c
-  src/YAAF_Hash_xxhash.c
-)
-
-add_definitions("-DYAAF_BUILDING_LIBRARY")
-
-add_library(${YAAF_LIB_NAME} ${YAAF_SRC} ${YAAF_HDR} ${YAAF_INTERNAL_HDR})
-
-set(YAAF_LIBRARIES ${YAAF_LIB_NAME} ${YAAF_LZ4_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
-
-target_link_libraries(${YAAF_LIB_NAME} ${YAAF_LZ4_LIBRARY})
-
-add_dependencies(${YAAF_LIB_NAME} lz4)
-
-install(TARGETS ${YAAF_LIB_NAME} DESTINATION lib)
-install(FILES ${YAAF_HDR} DESTINATION include/YAAF)
-
-remove_definitions("-DYAAF_BUILDING_LIBRARY")
-if(YAAF_BUILD_TESTS)
+if(YAAF_BUILD_TEST)
 add_subdirectory(test)
 endif()
 
 
-if(NOT YAAF_EXCLUDE_TOOLS)
-add_subdirectory(tools/yaafcl)
+if(NOT YAAF_EXCLUDE_YAAFCL)
+add_subdirectory(yaafcl)
 endif()
 

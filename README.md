@@ -29,8 +29,9 @@ Get the code with the following command in order to checkout all liked repositor
 
 YAAF uses [CMake][] as its build system and the following options can be defined during the configuration phase:
 
- * YAAF_EXCLUDE_TOOLS - Exclude YAAFCL from the build
- * YAAF_INCLUDE_TEST  - Build small test code
+ * YAAF_EXCLUDE_YAAFCL - Exclude YAAFCL from the build.
+ * YAAF_INCLUDE_TEST  - Build small test code.
+ * YAAF_BUILD_SHARED_LIB - Build libYAAF as a shared library. 
 
 Tested Platforms
 -----------------
