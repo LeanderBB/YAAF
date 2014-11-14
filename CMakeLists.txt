@@ -1,7 +1,7 @@
 ################################################################################
 # YAAF - Yet Another Archive Format
 ################################################################################
-project(YAAF)
+project(YAAF C)
 cmake_minimum_required(VERSION 2.8)
 
 ################################################################################
@@ -101,6 +101,9 @@ find_package(Threads REQUIRED)
 ################################################################################
 add_subdirectory(3rdparty)
 
+set(YAAF_USE_COMPRESSION_LZ4 1)
+set(YAAF_USE_HASH_XXHASH 1)
+
 ################################################################################
 # LIB Settings
 ################################################################################
@@ -138,6 +141,8 @@ set(YAAF_INTERNAL_HDR
   src/YAAF_MemFile.h
   src/YAAF_Compression.h
   src/YAAF_Compression_lz4.h
+  src/YAAF_Hash.h
+  src/YAAF_Hash_xxhash.h
 )
 
 
@@ -149,6 +154,7 @@ set(YAAF_SRC
   src/YAAF_TLS.c
   src/YAAF_Compression.c
   src/YAAF_Compression_lz4.c
+  src/YAAF_Hash_xxhash.c
 )
 
 add_library(${YAAF_LIB_NAME} ${YAAF_SRC} ${YAAF_HDR} ${YAAF_INTERNAL_HDR})
@@ -160,9 +166,9 @@ target_link_libraries(${YAAF_LIB_NAME} ${YAAF_LZ4_LIBRARY})
 install(TARGETS ${YAAF_LIB_NAME} DESTINATION lib)
 install(FILES ${YAAF_HDR} DESTINATION include/YAAF)
 
-#if(YAAF_BUILD_TESTS)
+if(YAAF_BUILD_TESTS)
 add_subdirectory(test)
-#endif()
+endif()
 
 
 if(NOT YAAF_EXCLUDE_TOOLS)

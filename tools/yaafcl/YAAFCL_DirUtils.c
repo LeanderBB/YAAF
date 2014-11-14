@@ -299,6 +299,7 @@ YAAFCL_ScanDirectory(YAAFCL_DirEntryStack* pStack,
         p_cur_dir = opendir(p_cur_path->str);
         if (!p_cur_dir)
         {
+            YAAFCL_LogError("[Scan Directory] Failed to read dir '%s'\n", p_cur_path->str);
             goto YAAFCL_ScanDirFail;
         }
 
@@ -312,8 +313,8 @@ YAAFCL_ScanDirectory(YAAFCL_DirEntryStack* pStack,
                 continue;
             }
 
-            /* if it is a directory */
-            if (S_ISDIR(p_cur_dirent->d_type))
+            /* if it is a file */
+            if ( DT_REG ==  p_cur_dirent->d_type)
             {
                 if (YAAFCL_AddFileToEntryStack(pStack, p_cur_path->str, p_cur_dirent->d_name,
                                                real_path.str) != YAAF_SUCCESS)
@@ -321,7 +322,7 @@ YAAFCL_ScanDirectory(YAAFCL_DirEntryStack* pStack,
                     goto YAAFCL_ScanDirFail;
                 }
             }
-            else if (S_ISDIR(p_cur_dirent->d_type) && (flags & YAAFCL_SWITCH_RECURSIVE_BIT))
+            else if (DT_DIR == p_cur_dirent->d_type && (flags & YAAFCL_SWITCH_RECURSIVE_BIT))
             {
                 YAAFCL_Str full_path;
                 YAAFCL_StrInit(&full_path);

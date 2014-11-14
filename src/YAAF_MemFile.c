@@ -48,8 +48,6 @@ int
 YAAF_MemFileOpen(YAAF_MemFile* pFile,
                  const char* path)
 {
-    (void) pFile;
-    (void) path;
     int result = YAAF_FAIL;
     size_t file_size = 0;
     int handle = -1;

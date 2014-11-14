@@ -29,76 +29,37 @@
  * You can contact the author at :
  * - YAAF source repository : http://www.github.com/LeanderBB/YAAF
  */
+#include "YAAF_Hash.h"
+#include "YAAF.h"
+#if defined(YAAF_USE_HASH_XXHASH)
 
-#ifndef __YAAF_ERRORINTERNAL_H__
-#define __YAAF_ERRORINTERNAL_H__
-
-#include <time.h>
-#define YAAF_BLOCK_SIZE (128 * 1024)
-#define YAAF_BLOCK_CACHE_SIZE_RD YAAF_BLOCK_SIZE
-#define YAAF_BLOCK_CACHE_SIZE_WR (YAAF_BLOCK_SIZE + (8 * 1024))
-
-
-#define YAAF_PTR_OFFSET(ptr, offset) (((char*)ptr) + offset)
-#define YAAF_CONST_PTR_OFFSET(ptr, offset) (((const char*)ptr) + offset)
-
-#define YAAF_MAX_FILE_SIZE (0xF0000000)
-#define YAAF_MAX_ARCHIVE_SIZE (0xFFFF0000)
-
-struct YAAF_DateTime;
-
-enum
+void
+YAAF_HashStateReset(YAAF_HashState_t* pState,
+                    const uint32_t seed)
 {
-    YAAF_COMPRESSION_LZ4_BIT = 1 << 0
-};
+    XXH32_reset(pState, seed);
+}
 
-enum
+int
+YAAF_HashStateUpdate(YAAF_HashState_t* pState,
+                     const void* input,
+                     const uint32_t size)
 {
-    YAAF_SUPPORTED_COMPRESSIONS_MASK = YAAF_COMPRESSION_LZ4_BIT,
-    YAAF_DEFAULT_COMPRESSION_BIT = YAAF_COMPRESSION_LZ4_BIT
-};
+    return (XXH32_update(pState, input, size) == XXH_OK) ? YAAF_SUCCESS : YAAF_FAIL;
+}
 
-
-
-#pragma pack(push)
-#pragma pack(1)
-
-/* representation of date time in the archive */
-struct YAAF_DateTime
+uint32_t
+YAAF_HashStateDigest(YAAF_HashState_t* pState)
 {
-    uint8_t sec;
-    uint8_t min;
-    uint8_t hour;
-    uint8_t day;
-    uint8_t month;
-    uint8_t year;
-    uint16_t padding;
-};
-#pragma pack(pop)
+    return XXH32_digest(pState);
+}
 
-
-
-void YAAF_SetError(const char* error);
-
-void* YAAF_malloc(size_t size);
-
-void YAAF_free(void* ptr);
-
-void* YAAF_calloc(size_t nmb,
-                  size_t size);
-
-int YAAF_StrCompareNoCase(const char* str1,
-                          const char* str2);
-
-int YAAF_StrContainsChr(const char* str,
-                        const char chr);
-
-int YAAF_GetFileSize(size_t* out,
-                     const char* path);
-
-int YAAF_TimeToArchiveTime(const time_t time,
-                           struct YAAF_DateTime* pDateTime);
-
-time_t YAAF_ArchiveTimeToTime(const struct YAAF_DateTime* pDateTime);
+uint32_t
+YAAF_Hash(const void* input,
+          const uint32_t size,
+          const uint32_t seed)
+{
+    return XXH32(input, size, seed);
+}
 
 #endif

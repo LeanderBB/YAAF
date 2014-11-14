@@ -20,7 +20,7 @@
  */
 #include "YAAFCL_Job.h"
 #include "YAAF_Compression.h"
-#include "xxhash.h"
+#include "YAAF_Hash.h"
 
 /* --- Single Thread Implementation -----------------------------------------*/
 
@@ -35,7 +35,7 @@ YAAFCL_CompressFile(FILE *pInput,
     uint32_t file_size = 0, file_size_compressed = 0;
     int result = YAAF_FAIL;
     YAAF_BlockHeader end_block;
-    XXH32_state_t hash_state;
+    YAAF_HashState_t hash_state;
 
     memset(&end_block, 0, sizeof(end_block));
 
@@ -45,7 +45,7 @@ YAAFCL_CompressFile(FILE *pInput,
         return YAAF_FAIL;
     }
 
-    XXH32_reset(&hash_state, 0);
+    YAAF_HashStateReset(&hash_state, 0);
 
 
     while (!feof(pInput))
@@ -85,8 +85,8 @@ YAAFCL_CompressFile(FILE *pInput,
         }
 
         /* update hash */
-        if (XXH32_update(&hash_state, tmp_input, bytes_read)
-                != XXH_OK)
+        if (YAAF_HashStateUpdate(&hash_state, tmp_input, bytes_read)
+                != YAAF_SUCCESS)
         {
             YAAFCL_LogError("[Compress] Failed to update hash\n");
             goto cleanup;
@@ -110,7 +110,7 @@ cleanup:
 
     if (result == YAAF_SUCCESS)
     {
-        pEntry->hashUncompressed = XXH32_digest(&hash_state);
+        pEntry->hashUncompressed = YAAF_HashStateDigest(&hash_state);
         pEntry->sizeCompressed = file_size_compressed;
         if (pEntry->sizeUncompressed != file_size_compressed)
         {
@@ -142,7 +142,7 @@ int YAAFCL_JobCompress(FILE* pOutput,
     YAAF_Manifest manifest;
     int result = YAAF_FAIL;
     size_t total_size = sizeof(YAAF_Manifest);
-    XXH32_state_t hash_state;
+    YAAF_HashState_t hash_state;
 
     YAAF_ASSERT(pOutput);
     YAAF_ASSERT(pFiles);
@@ -231,20 +231,21 @@ int YAAFCL_JobCompress(FILE* pOutput,
     /* sort manifest entries */
     qsort(p_manifest_entries,pFiles->count, sizeof(YAAFCL_DirEntry*), YAAFCL_DirEntryCompareFnc);
 
-    XXH32_reset(&hash_state, 0);
+    YAAF_HashStateReset(&hash_state, 0);
     /* for each manifest entry */
     for(index = 0; index < pFiles->count; ++index)
     {
         /* update hash */
 
-        if(XXH32_update(&hash_state, &p_manifest_entries[index]->manifestInfo, sizeof(YAAF_ManifestEntry)) != XXH_OK)
+        if(YAAF_HashStateUpdate(&hash_state, &p_manifest_entries[index]->manifestInfo, sizeof(YAAF_ManifestEntry)) != YAAF_SUCCESS)
         {
             YAAFCL_LogError("[CompressArchive] Failed calculate hash for entry \"%s\"\n.",
                             p_manifest_entries[index]->archivePath.str);
             goto fail;
         }
 
-        if(XXH32_update(&hash_state, p_manifest_entries[index]->archivePath.str, p_manifest_entries[index]->archivePath.len + 1) != XXH_OK)
+        if(YAAF_HashStateUpdate(&hash_state, p_manifest_entries[index]->archivePath.str,
+                                p_manifest_entries[index]->archivePath.len + 1) != YAAF_SUCCESS)
         {
             YAAFCL_LogError("[CompressArchive] Failed calculate hash for entry name \"%s\"\n.",
                             p_manifest_entries[index]->archivePath.str);
@@ -289,7 +290,7 @@ int YAAFCL_JobCompress(FILE* pOutput,
 
     /* write manifest */
     manifest.manifestEntriesSize = YAAF_LITTLE_E32(total_manifest_entries_size);
-    manifest.entriesHash = XXH32_digest(&hash_state);
+    manifest.entriesHash = YAAF_HashStateDigest(&hash_state);
     bytes_written = fwrite(&manifest, 1, sizeof(manifest), pOutput);
     if (bytes_written != sizeof(manifest))
     {

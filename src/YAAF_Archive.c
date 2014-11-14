@@ -34,7 +34,7 @@
 #include "YAAF_File.h"
 #include "YAAF_Internal.h"
 #include "YAAF_MemFile.h"
-#include "xxhash.h"
+#include "YAAF_Hash.h"
 
 
 /* Aux functions */
@@ -203,7 +203,7 @@ YAAF_ArchiveParse(YAAF_Archive* pArchive,
     tmp_ptr = (const YAAF_ManifestEntry*) YAAF_CONST_PTR_OFFSET(pArchive->memFile.ptr, entries_offset);
 
     /* check entries hash */
-    if (pArchive->pManifest->entriesHash != XXH32(tmp_ptr, pArchive->pManifest->manifestEntriesSize, 0))
+    if (pArchive->pManifest->entriesHash != YAAF_Hash(tmp_ptr, pArchive->pManifest->manifestEntriesSize, 0))
     {
         YAAF_SetError("Manifest Entry list corrupted");
         return YAAF_FAIL;
@@ -320,7 +320,7 @@ YAAF_ArchiveCheckEntry(const YAAF_Archive* pArchive,
     uint32_t offset = pEntry->offset + sizeof(YAAF_FileHeader);
     const void* ptr = YAAF_CONST_PTR_OFFSET(pArchive->memFile.ptr, offset);
     uint32_t hash_block, hash_uncompressed;
-    XXH32_state_t hash_state;
+    YAAF_HashState_t hash_state;
     const YAAF_BlockHeader* block_header = (const YAAF_BlockHeader*)ptr;
     YAAF_Decompressor dc;
     char tmp_buffer[YAAF_BLOCK_SIZE];
@@ -332,7 +332,7 @@ YAAF_ArchiveCheckEntry(const YAAF_Archive* pArchive,
         return YAAF_FAIL;
     }
 
-    XXH32_reset(&hash_state, 0);
+    YAAF_HashStateReset(&hash_state, 0);
 
     while(block_header->size != 0)
     {
@@ -344,7 +344,7 @@ YAAF_ArchiveCheckEntry(const YAAF_Archive* pArchive,
         ptr = YAAF_CONST_PTR_OFFSET(pArchive->memFile.ptr, offset);
 
         /* hash block */
-        hash_block = XXH32(ptr, block_size, 0);
+        hash_block = YAAF_Hash(ptr, block_size, 0);
 
         /* check hash */
         if (hash_block != block_header->hash)
@@ -366,7 +366,7 @@ YAAF_ArchiveCheckEntry(const YAAF_Archive* pArchive,
             }
 
             /* update uncompressed hash */
-            if (XXH32_update(&hash_state, tmp_buffer, uncompressed_size) != XXH_OK)
+            if (YAAF_HashStateUpdate(&hash_state, tmp_buffer, uncompressed_size) != YAAF_SUCCESS)
             {
                 YAAF_SetError("Failed to update uncompressed hash");
                 result = YAAF_FAIL;
@@ -376,7 +376,7 @@ YAAF_ArchiveCheckEntry(const YAAF_Archive* pArchive,
         else
         {
             /* update uncompressed hash */
-            if (XXH32_update(&hash_state, ptr, block_size) != XXH_OK)
+            if (YAAF_HashStateUpdate(&hash_state, ptr, block_size) != YAAF_SUCCESS)
             {
                 YAAF_SetError("Failed to update uncompressed hash");
                 result = YAAF_FAIL;
@@ -390,7 +390,7 @@ YAAF_ArchiveCheckEntry(const YAAF_Archive* pArchive,
         block_header = (const YAAF_BlockHeader*)ptr;
     }
 
-    hash_uncompressed = XXH32_digest(&hash_state);
+    hash_uncompressed = YAAF_HashStateDigest(&hash_state);
 
     if (hash_uncompressed != pEntry->hashUncompressed)
     {

@@ -216,7 +216,7 @@ YAAFCL_StrExtractPath(YAAFCL_Str* pPath,
     YAAFCL_StrClear(pPath);
     if (pStr->len)
     {
-        for (size_t i = pStr->len - 1; i > 0; --i)
+        for (YAAF_signed_size_t i = pStr->len - 1; i >=0; --i)
         {
             if (pStr->str[i] == sep)
             {

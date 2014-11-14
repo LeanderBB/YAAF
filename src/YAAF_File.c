@@ -41,17 +41,20 @@ YAAF_FileCreate(const void *ptr,
 {
 
     YAAF_File* p_result = NULL;
+    const char* chr_ptr = NULL;
+    const YAAF_FileHeader* p_hdr = NULL;
+
     if (!ptr)
     {
         return NULL;
     }
 
-    const char* chr_ptr = (const char*) ptr;
+    chr_ptr = (const char*) ptr;
     chr_ptr += pManifestEntry->offset;
 
     /* Read file header */
 
-    const YAAF_FileHeader* p_hdr = (const YAAF_FileHeader*)chr_ptr;
+    p_hdr = (const YAAF_FileHeader*)chr_ptr;
 
     if (YAAF_LITTLE_E32(p_hdr->magic) != YAAF_FILE_HEADER_MAGIC)
     {
@@ -197,7 +200,6 @@ YAAF_FileSeekSet(YAAF_File* pFile,
                  uint32_t bytesRead,
                  const int offset)
 {
-    fflush(stdout);
     const void* ptr = YAAF_PTR_OFFSET(pFile->ptr, bytesRead);
     const YAAF_BlockHeader* block_hdr = (const YAAF_BlockHeader*) ptr;
     uint32_t block_size = YAAF_BLOCK_SIZE_GET(block_hdr->size);

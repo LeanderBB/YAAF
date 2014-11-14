@@ -32,10 +32,12 @@
 #include "YAAF_Compression_lz4.h"
 #include "YAAF.h"
 #include "YAAF_Internal.h"
+#include "YAAF_Hash.h"
+#if defined(YAAF_USE_COMPRESSION_LZ4)
 
 #include "lz4.h"
 #include "lz4hc.h"
-#include "xxhash.h"
+
 
 static int YAAF_CompressLZ4(void* pState,
                             const void* inbuffer,
@@ -68,14 +70,14 @@ static int YAAF_CompressLZ4(void* pState,
         /* no compression */
         memcpy(outbuffer, inbuffer, insize);
         pCompressResult->size = YAAF_BLOCK_SIZE_BUILD(0, insize);
-        pCompressResult->hash = XXH32(inbuffer, insize, 0);
+        pCompressResult->hash = YAAF_Hash(inbuffer, insize, 0);
         return YAAF_COMPRESSION_OK;
     }
     else
     {
 
         pCompressResult->size = YAAF_BLOCK_SIZE_BUILD(1, bytes_compressed);
-        pCompressResult->hash = XXH32(outbuffer, bytes_compressed, 0);
+        pCompressResult->hash = YAAF_Hash(outbuffer, bytes_compressed, 0);
         return YAAF_COMPRESSION_OK;
     }
 }
@@ -116,3 +118,5 @@ YAAF_DecompressorCreateLZ4(YAAF_Decompressor* pDecompressor)
     pDecompressor->state = NULL;
     pDecompressor->decompress = YAAF_DecompressLZ4;
 }
+
+#endif

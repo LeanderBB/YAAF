@@ -130,7 +130,7 @@ YAAF_GetFileSize(size_t* out,
                  const char* path)
 {
     struct stat stat_inf;
-    // only get size information if it is a regular file
+    /* only get size information if it is a regular file */
     if (stat(path, &stat_inf) == 0 && S_ISREG(stat_inf.st_mode))
     {
         *out = stat_inf.st_size;
