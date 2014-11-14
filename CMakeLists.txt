@@ -159,6 +159,8 @@ set(YAAF_SRC
   src/YAAF_Hash_xxhash.c
 )
 
+add_definitions("-DYAAF_BUILDING_LIBRARY")
+
 add_library(${YAAF_LIB_NAME} ${YAAF_SRC} ${YAAF_HDR} ${YAAF_INTERNAL_HDR})
 
 set(YAAF_LIBRARIES ${YAAF_LIB_NAME} ${YAAF_LZ4_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
@@ -170,6 +172,7 @@ add_dependencies(${YAAF_LIB_NAME} lz4)
 install(TARGETS ${YAAF_LIB_NAME} DESTINATION lib)
 install(FILES ${YAAF_HDR} DESTINATION include/YAAF)
 
+remove_definitions("-DYAAF_BUILDING_LIBRARY")
 if(YAAF_BUILD_TESTS)
 add_subdirectory(test)
 endif()
