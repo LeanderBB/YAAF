@@ -110,7 +110,7 @@ cleanup:
 
     if (result == YAAF_SUCCESS)
     {
-        pEntry->hashUncompressed = YAAF_HashStateDigest(&hash_state);
+        pEntry->fileHash = YAAF_HashStateDigest(&hash_state);
         pEntry->sizeCompressed = file_size_compressed;
         if (pEntry->sizeUncompressed != file_size_compressed)
         {
@@ -253,7 +253,7 @@ int YAAFCL_JobCompress(FILE* pOutput,
         }
 
         p_manifest_entries[index]->manifestInfo.magic = YAAF_LITTLE_E32(p_manifest_entries[index]->manifestInfo.magic);
-        p_manifest_entries[index]->manifestInfo.hashUncompressed = YAAF_LITTLE_E32(p_manifest_entries[index]->manifestInfo.hashUncompressed);
+        p_manifest_entries[index]->manifestInfo.fileHash = YAAF_LITTLE_E32(p_manifest_entries[index]->manifestInfo.fileHash);
         p_manifest_entries[index]->manifestInfo.flags = YAAF_LITTLE_E16(p_manifest_entries[index]->manifestInfo.flags);
         p_manifest_entries[index]->manifestInfo.nameLen = YAAF_LITTLE_E16(p_manifest_entries[index]->manifestInfo.nameLen);
         p_manifest_entries[index]->manifestInfo.sizeCompressed = YAAF_LITTLE_E64(p_manifest_entries[index]->manifestInfo.sizeCompressed);

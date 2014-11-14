@@ -392,7 +392,7 @@ YAAF_ArchiveCheckEntry(const YAAF_Archive* pArchive,
 
     hash_uncompressed = YAAF_HashStateDigest(&hash_state);
 
-    if (hash_uncompressed != pEntry->hashUncompressed)
+    if (hash_uncompressed != pEntry->fileHash)
     {
         YAAF_SetError("Uncompressed hash does not match");
         result = YAAF_FAIL;
@@ -411,6 +411,20 @@ YAAF_ArchiveCheck(const YAAF_Archive* pArchive)
     for (i = 0; i < pArchive->pManifest->nEntries && result == YAAF_SUCCESS; ++i)
     {
         result = YAAF_ArchiveCheckEntry(pArchive, pArchive->pEntries[i]);
+    }
+    return result;
+}
+
+int
+YAAF_ArchiveCheckFile(const YAAF_Archive* pArchive,
+                      const char* file)
+{
+    int result = YAAF_FAIL;
+    uint32_t file_loc = YAAF_ArchiveLocateFile(pArchive,file);
+
+    if (file_loc != YAAF_ARCHIVE_FILE_NOT_FOUND)
+    {
+        result = YAAF_ArchiveCheckEntry(pArchive, pArchive->pEntries[file_loc]);
     }
     return result;
 }

@@ -95,14 +95,15 @@ typedef struct YAAF_Manifest
 typedef struct YAAF_ManifestEntry
 {
   uint32_t magic;
-  uint32_t hashUncompressed;
-  uint16_t flags;
-  uint16_t nameLen;
   uint32_t sizeCompressed;
   uint32_t sizeUncompressed;
+  uint32_t fileHash;
   uint32_t offset;
   struct YAAF_DateTime lastModDateTime;
   uint16_t extraLen;
+  uint16_t nameLen;
+  uint16_t flags;
+  uint16_t unused;
 } YAAF_ManifestEntry;
 
 typedef struct YAAF_FileHeader

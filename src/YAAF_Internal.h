@@ -66,13 +66,12 @@ enum
 /* representation of date time in the archive */
 struct YAAF_DateTime
 {
-    uint8_t sec;
-    uint8_t min;
-    uint8_t hour;
-    uint8_t day;
-    uint8_t month;
-    uint8_t year;
-    uint16_t padding;
+    unsigned sec   :5;
+    unsigned min   :5;
+    unsigned hour  :6;
+    unsigned day   :5;
+    unsigned month :4;
+    unsigned year  :7;
 };
 #pragma pack(pop)
 
