@@ -19,7 +19,7 @@ endif()
 set(YAAF_CONFIG_HEADER_DIR ${PROJECT_BINARY_DIR}/build_config)
 set(YAAF_CONFIG_FILE "${YAAF_CONFIG_HEADER_DIR}/YAAF_Config.h")
 
-configure_file("${PROJECT_SOURCE_DIR}/cmake/YAAF_Config.cmake"
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/YAAF_Config.cmake"
                "${YAAF_CONFIG_FILE}")
 
 include_directories(

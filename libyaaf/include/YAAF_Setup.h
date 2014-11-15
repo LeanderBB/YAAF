@@ -198,6 +198,15 @@ static YAAF_INLINE YAAF_BSWAP64(uint64_t v)
 #elif defined(__i386__) || (__intel__) || defined(_WIN32)
 #define YAAF_CPU_X86
 #define YAAF_CPU_32BIT
+#elif defined(__aarch64__) // arm 64
+#define YAAF_CPU_ARM
+#define YAAF_CPU_64BIT
+#elif defined(__ARM_ARCH_7__) || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_7R__) \
+    || defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7S__) || defined(__ARM_ARCH_6__) \
+    || defined(__ARM_ARCH_6J__) || defined(__ARM_ARCH_6K__) || defined(__ARM_ARCH_6Z__) \
+    || defined(__ARM_ARCH_6ZK__) || defined(_M_ARM)
+#define YAAF_CPU_ARM
+#define YAAF_CPU_32BIT
 #else
 #error "Unknown Processor."
 #endif
