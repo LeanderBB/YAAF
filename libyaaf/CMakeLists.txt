@@ -83,7 +83,7 @@ set(YAAF_INCLUDE_DIR_INTERNAL ${CMAKE_CURRENT_SOURCE_DIR}/src ${YAAF_LZ4_INCLUDE
 
 target_link_libraries(${YAAF_LIB_NAME} ${YAAF_LZ4_LIBRARY})
 
-add_dependencies(${YAAF_LIB_NAME} lz4)
+add_dependencies(${YAAF_LIB_NAME} ${YAAF_LZ4_LIBRARY})
 
 install(TARGETS ${YAAF_LIB_NAME} DESTINATION lib)
 install(FILES ${YAAF_HDR} DESTINATION include/YAAF)

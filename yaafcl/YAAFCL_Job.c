@@ -57,6 +57,12 @@ YAAFCL_CompressFile(FILE *pInput,
         bytes_read = fread(tmp_input, 1, YAAF_BLOCK_SIZE, pInput);
         if (!bytes_read)
         {
+            /* check wether we read something before hitting error */
+            if (file_size && feof(pInput))
+            {
+                /* we reached the end of the file */
+                break;
+            }
             YAAFCL_LogError("[Compress] Failed to read into buffer\n");
             goto cleanup;
         }
