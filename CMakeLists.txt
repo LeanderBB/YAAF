@@ -9,6 +9,17 @@ cmake_minimum_required(VERSION 2.8)
 # Options
 ################################################################################
 
+# Set configuration types do Debug and Release
+set(CMAKE_CONFIGURATION_TYPES Debug Release)
+
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+message(FATAL_ERROR "Please use either Release or Debug for CMAKE_BUILD_TYPE")
+endif()
+
 # use LZ4 as defualt compression algorithm (can't be changed atm)
 set(YAAF_USE_COMPRESSION_LZ4 1)
 
