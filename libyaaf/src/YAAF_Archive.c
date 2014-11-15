@@ -58,7 +58,7 @@ YAAF_ArchiveOpen(const char* path)
     YAAF_Archive* p_archive = NULL;
     if (path)
     {
-        p_archive = (YAAF_Archive*) YAAF_malloc(sizeof(YAAF_Archive));
+        p_archive = (YAAF_Archive*) YAAF_calloc(1, sizeof(YAAF_Archive));
         p_archive->pEntries = NULL;
         p_archive->pManifest = NULL;
 
@@ -78,7 +78,7 @@ YAAF_ArchiveClose(YAAF_Archive* pArchive)
     {
         if (pArchive->pEntries)
         {
-            YAAF_free(pArchive->pEntries);
+            YAAF_free((void*)pArchive->pEntries);
         }
         YAAF_MemFileClose(&pArchive->memFile);
         YAAF_free(pArchive);

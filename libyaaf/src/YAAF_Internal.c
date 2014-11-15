@@ -105,7 +105,7 @@ YAAF_StrCompareNoCase(const char* str1, const char* str2)
 #if defined(YAAF_HAVE_STRCASECMP)
     return strcasecmp(str1, str2);
 #elif defined(YAAF_HAVE_STRICMP)
-    return stricmp(str1, str2);
+    return _stricmp(str1, str2);
 #else
 #error No implementation of string case insentive compare
 #endif
@@ -125,6 +125,9 @@ YAAF_StrContainsChr(const char* str, const char chr)
     return 0;
 }
 
+#if defined(YAAF_OS_WIN) && !defined(S_ISREG)
+#define  S_ISREG(mode) mode & _S_IFREG
+#endif
 int
 YAAF_GetFileSize(size_t* out,
                  const char* path)
@@ -143,10 +146,13 @@ int
 YAAF_TimeToArchiveTime(const time_t time,
                        struct YAAF_DateTime* pDateTime)
 {
-    struct tm* p_time;
-
+    struct tm* p_time = NULL;
+#if defined(YAAF_OS_WIN)
+    if (localtime_s(p_time, &time) == 0)
+#else
     p_time = localtime(&time);
     if (p_time)
+#endif
     {
         pDateTime->day = p_time->tm_mday;
         pDateTime->hour = p_time->tm_hour;

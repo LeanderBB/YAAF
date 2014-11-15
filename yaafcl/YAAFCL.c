@@ -214,7 +214,7 @@ YAAFCL_CheckArchive(const int argc,
         p_archive = YAAF_ArchiveOpen(argv[i]);
         if (!p_archive)
         {
-            YAAFCL_LogError("[Check Archive] Failed to parse archive \"%s\"\n", argv[i]);
+            YAAFCL_LogError("[Check Archive] Failed to parse archive \"%s\" :%s \n", argv[i], YAAF_GetError());
             goto exit;
         }
 

@@ -114,19 +114,24 @@
 /* --- Calling Conventions-------------------------------------------------- */
 
 #if defined(YAAF_COMPILER_CLANG) || defined(YAAF_COMPILER_GNUC)
-  #define YAAF_CALL
-  #define YAAF_EXPORT_VISIBLE __attribute__ ((visibility("default")))
-  #define YAAF_EXPORT_LOCAL __attribute__ ((visibility("hidden")))
-  #define YAAF_INLINE __inline__
-  #define YAAF_FORCE_INLINE __attribute__((always_inline)) static __inline__
+    #define YAAF_CALL
+    #define YAAF_EXPORT_VISIBLE __attribute__ ((visibility("default")))
+    #define YAAF_EXPORT_LOCAL __attribute__ ((visibility("hidden")))
+    #define YAAF_INLINE __inline__
+    #define YAAF_FORCE_INLINE __attribute__((always_inline)) static __inline__
 #elif defined(YAAF_COMPILER_MSC)
-  #define YAAF_CALL __cdecl
-  #define YAAF_EXPORT_VISIBLE __declspec(dllexport)
-  #define YAAF_EXPORT_LOCAL __declspec(dllimport)
-#define YAAF_INLINE __inline
-  #define YAAF_FORCE_INLINE __forceinline
+    #define YAAF_CALL __cdecl
+#if defined(YAAF_SHARED_LIB)
+    #define YAAF_EXPORT_VISIBLE __declspec(dllexport)
+    #define YAAF_EXPORT_LOCAL __declspec(dllimport)
 #else
-  #error Missing calling convetions for current compiler
+    #define YAAF_EXPORT_VISIBLE
+    #define YAAF_EXPORT_LOCAL
+#endif
+#define YAAF_INLINE __inline
+    #define YAAF_FORCE_INLINE __forceinline
+#else
+    #error Missing calling convetions for current compiler
 #endif
 
 #if defined(YAAF_BUILDING_LIBRARY)

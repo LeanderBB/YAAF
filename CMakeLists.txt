@@ -47,15 +47,17 @@ set(YAAF_C_COMPILE_FLAGS_RELEASE "-O3 -g")
 
 else()
 
-set(YAFF_C_WERROR )
+add_definitions( "/D WIN32" "/D _WINDOWS")
 
-set(YAAF_C_WARNING_FLAGS )
+set(YAFF_C_WERROR "/WX")
+
+set(YAAF_C_WARNING_FLAGS "/W3")
 
 set(YAAF_C_COMPILE_FLAGS "${YAAF_C_COMPILER_EXTRA}")
 
-set(YAAF_C_COMPILE_FLAGS_DEBUG "/DYAAF_DEBUG")
+set(YAAF_C_COMPILE_FLAGS_DEBUG "/DYAAF_DEBUG /D _DEBUG /Oy- /Od /Ob0 /Gm- /RTC1 /Zi")
 
-set(YAAF_C_COMPILE_FLAGS_RELEASE )
+set(YAAF_C_COMPILE_FLAGS_RELEASE "/O2 /Oy- /Gm- /GS /MD /Ob2 /Gd  /D NDEBUG")
 endif()
 
 set(CMAKE_C_FLAGS "${YAAF_C_WARNING_FLAGS} ${YAAF_C_COMPILE_FLAGS}")
@@ -78,7 +80,7 @@ else()
 set(CMAKE_REQUIRED_INCLUDES string.h)
 endif()
 check_function_exists(strcasecmp YAAF_HAVE_STRCASECMP)
-check_function_exists(stricmp YAAF_HAVE_STRICMP)
+check_function_exists(_stricmp YAAF_HAVE_STRICMP)
 unset(CMAKE_REQUIRED_INCLUDES)
 
 # check dirent

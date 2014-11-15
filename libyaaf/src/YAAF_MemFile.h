@@ -38,7 +38,14 @@ typedef struct YAAF_MemFile
 {
     const void * ptr;
     size_t size;
+#if defined(YAAF_OS_UNIX)
     int oshdl;
+#elif defined(YAAF_OS_WIN)
+    void* memhdl;
+    void* oshdl;
+#else
+#error "Unknown file handle representation for current platform"
+#endif
 } YAAF_MemFile;
 
 

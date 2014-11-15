@@ -36,11 +36,11 @@ typedef unsigned int YAAF_TLSKey_t;
 
 int YAAF_TLSCreate(YAAF_TLSKey_t *key);
 
-int YAAF_TLSSet(const YAAF_TLSKey_t key,
+int YAAF_TLSSet(YAAF_TLSKey_t key,
                 const void *ptr);
 
-void* YAAF_TLSGet(const YAAF_TLSKey_t key);
+void* YAAF_TLSGet(YAAF_TLSKey_t key);
 
-void YAAF_TLSDestroy(const YAAF_TLSKey_t key);
+void YAAF_TLSDestroy(YAAF_TLSKey_t key);
 
 #endif

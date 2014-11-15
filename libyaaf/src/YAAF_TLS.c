@@ -54,7 +54,7 @@ YAAF_TLSCreate(YAAF_TLSKey_t* key)
 }
 
 int
-YAAF_TLSSet(const YAAF_TLSKey_t key,
+YAAF_TLSSet(YAAF_TLSKey_t key,
             const void *ptr)
 {
     pthread_key_t tkey = (pthread_key_t) key;
@@ -62,14 +62,14 @@ YAAF_TLSSet(const YAAF_TLSKey_t key,
 }
 
 void*
-YAAF_TLSGet(const YAAF_TLSKey_t key)
+YAAF_TLSGet(YAAF_TLSKey_t key)
 {
     pthread_key_t tkey = (pthread_key_t) key;
     return pthread_getspecific(tkey);
 }
 
 void
-YAAF_TLSDestroy(const YAAF_TLSKey_t key)
+YAAF_TLSDestroy(YAAF_TLSKey_t key)
 {
     pthread_key_t tkey = (pthread_key_t) key;
     pthread_key_delete(tkey);
@@ -79,10 +79,10 @@ YAAF_TLSDestroy(const YAAF_TLSKey_t key)
 int
 YAAF_TLSCreate(YAAF_TLSKey_t* key)
 {
-    DWROD wkey = TlsAlloc();
+    DWORD wkey = TlsAlloc();
     if (wkey != TLS_OUT_OF_INDEXES)
     {
-        key = wkey;
+        *key = wkey;
         return YAAF_SUCCESS;
     }
     else
@@ -92,20 +92,20 @@ YAAF_TLSCreate(YAAF_TLSKey_t* key)
 }
 
 int
-YAAF_TLSSet(const YAAF_TLSKey_t key,
+YAAF_TLSSet(YAAF_TLSKey_t key,
             const void *ptr)
 {
-    return (!TlsSetValue(key, ptr)) ? YAAF_FAIL : YAAF_SUCCESS;
+    return (!TlsSetValue(key, (void*)ptr)) ? YAAF_FAIL : YAAF_SUCCESS;
 }
 
 void*
-YAAF_TLSGet(const YAAF_TLSKey_t key)
+YAAF_TLSGet(YAAF_TLSKey_t key)
 {
     return TlsGetValue(key);
 }
 
 void
-YAAF_TLSDestroy(const YAAF_TLSKey_t key)
+YAAF_TLSDestroy(YAAF_TLSKey_t key)
 {
     TlsFree(key);
 }
