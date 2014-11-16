@@ -98,6 +98,7 @@ typedef struct YAAF_ManifestEntry
   uint32_t sizeCompressed;
   uint32_t sizeUncompressed;
   uint32_t fileHash;
+  uint32_t nameHash;
   uint32_t offset;
   struct YAAF_DateTime lastModDateTime;
   uint16_t extraLen;

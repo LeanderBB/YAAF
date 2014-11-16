@@ -22,6 +22,8 @@
 #include "YAAFCL.h"
 #include "YAAFCL_DirUtils.h"
 
+#include "YAAF_Hash.h"
+
 #if defined(YAAF_OS_UNIX)
 #include <sys/time.h>
 #include <sys/param.h>
@@ -187,7 +189,10 @@ YAAFCL_AddFileToEntryStack(YAAFCL_DirEntryStack* pStack,
                            const char* start_path)
 {
     struct stat stat_inf;
-    YAAFCL_DirEntry* p_dir_entry = (YAAFCL_DirEntry*)YAAF_malloc(sizeof(YAAFCL_DirEntry));
+    YAAFCL_DirEntry* p_dir_entry = NULL;
+
+
+    p_dir_entry = (YAAFCL_DirEntry*)YAAF_malloc(sizeof(YAAFCL_DirEntry));
 
     /* create paths */
     YAAFCL_DirEntryInit(p_dir_entry);
@@ -202,12 +207,22 @@ YAAFCL_AddFileToEntryStack(YAAFCL_DirEntryStack* pStack,
     {
         YAAFCL_StrConcat(&p_dir_entry->archivePath, file_name);
     }
+
+    /* Check if archive path fits in a uint16_t */
+    if (p_dir_entry->archivePath.len > 0xFFFF)
+    {
+
+        YAAFCL_LogError("Archive path ('%s') is too long for entry '%s'\n",
+                        p_dir_entry->archivePath.str, p_dir_entry->fullPath.str);
+        goto exit_fail;
+    }
+
     /* Get size and time info */
     if (stat(p_dir_entry->fullPath.str, &stat_inf) != 0)
     {
-        YAAFCL_DirEntryDestroy(p_dir_entry);
-        YAAF_free(p_dir_entry);
-        return YAAF_FAIL;
+        YAAFCL_LogError("Could not get file information for '%s'\n",
+                        p_dir_entry->fullPath.str);
+        goto exit_fail;
     }
 
     if (stat_inf.st_size == 0)
@@ -221,10 +236,9 @@ YAAFCL_AddFileToEntryStack(YAAFCL_DirEntryStack* pStack,
     if (stat_inf.st_size > YAAF_MAX_FILE_SIZE)
     {
         /* File is bigger than max addressable file size*/
-        YAAFCL_LogError("File is larger than maximum addressable size: '%s'", p_dir_entry->fullPath.str);
-        YAAFCL_DirEntryDestroy(p_dir_entry);
-        YAAF_free(p_dir_entry);
-        return YAAF_FAIL;
+        YAAFCL_LogError("File is larger than maximum addressable size: '%s'\n",
+                        p_dir_entry->fullPath.str);
+        goto exit_fail;
     }
 
 
@@ -252,12 +266,16 @@ YAAFCL_AddFileToEntryStack(YAAFCL_DirEntryStack* pStack,
                           YAAF_ARCHIVE_SEP_STR);
     }
 
-    YAAF_ASSERT(p_dir_entry->archivePath.len <= 0xFFFF);
     p_dir_entry->manifestInfo.extraLen = 0;
     p_dir_entry->manifestInfo.nameLen = (uint16_t)p_dir_entry->archivePath.len + 1;
+    p_dir_entry->manifestInfo.nameHash = YAAF_Hash(p_dir_entry->archivePath.str, p_dir_entry->archivePath.len, 0);
 
     YAAFCL_DirEntryStackPush(pStack, p_dir_entry);
     return YAAF_SUCCESS;
+exit_fail:
+    YAAFCL_DirEntryDestroy(p_dir_entry);
+    YAAF_free(p_dir_entry);
+    return YAAF_FAIL;
 }
 
 int

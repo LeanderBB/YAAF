@@ -400,7 +400,7 @@ YAAFCL_JobDecompressArchive(const char* archive,
         }
 
         /* open archive file */
-        p_file = YAAF_ArchiveFile(p_archive, *aux_ptr);
+        p_file = YAAF_FileOpen(p_archive, *aux_ptr);
 
         if (!p_file)
         {

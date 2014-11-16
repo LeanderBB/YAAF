@@ -52,6 +52,13 @@ YAAF_ManifestEntryName(const YAAF_ManifestEntry* pEntry)
     return ptr + pEntry->extraLen;
 }
 
+YAAF_FORCE_INLINE const void*
+YAAF_ManifestEntryExtra(const YAAF_ManifestEntry* pEntry)
+{
+    const char* ptr = (const char*)pEntry;
+    return ptr + sizeof(struct YAAF_ManifestEntry);
+}
+
 YAAF_Archive*
 YAAF_ArchiveOpen(const char* path)
 {
@@ -272,8 +279,8 @@ YAAF_ArchiveLocateFile(const YAAF_Archive* pArchive, const char* file)
 }
 
 YAAF_File*
-YAAF_ArchiveFile(YAAF_Archive* pArchive,
-                 const char* filePath)
+YAAF_FileOpen(YAAF_Archive* pArchive,
+              const char* filePath)
 {
 
     uint32_t index;
@@ -295,7 +302,8 @@ int
 YAAF_ArchiveFileInfo(YAAF_Archive* pArchive, const char* filePath,
                      YAAF_FileInfo* pInfo)
 {
-    uint32_t index;
+    uint32_t index = YAAF_ARCHIVE_FILE_NOT_FOUND;
+    const YAAF_ManifestEntry* p_entry = NULL;
 
     /* locate file in archive */
     index = YAAF_ArchiveLocateFile(pArchive, filePath);
@@ -305,9 +313,21 @@ YAAF_ArchiveFileInfo(YAAF_Archive* pArchive, const char* filePath,
     }
 
     /* copy info */
-    pInfo->lastModification = YAAF_ArchiveTimeToTime(&pArchive->pEntries[index]->lastModDateTime);
-    pInfo->sizeCompressed = pArchive->pEntries[index]->sizeCompressed;
-    pInfo->sizeUncompressed = pArchive->pEntries[index]->sizeUncompressed;
+    p_entry = pArchive->pEntries[index];
+    pInfo->lastModification = YAAF_ArchiveTimeToTime(&p_entry->lastModDateTime);
+    pInfo->sizeCompressed = p_entry->sizeCompressed;
+    pInfo->sizeUncompressed = p_entry->sizeUncompressed;
+
+    if (p_entry->extraLen)
+    {
+        pInfo->extraSize = p_entry->extraLen;
+        pInfo->extra = YAAF_ManifestEntryExtra(p_entry);
+    }
+    else
+    {
+        pInfo->extraSize = 0;
+        pInfo->extra = NULL;
+    }
 
     return YAAF_SUCCESS;
 }

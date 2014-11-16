@@ -23,6 +23,8 @@
 #include "YAAFCL_DirUtils.h"
 #include "YAAFCL_Job.h"
 #include <stdarg.h>
+#include <time.h>
+#include <YAAF_Hash.h>
 
 static int g_AllowErrorLog = 1;
 
@@ -201,8 +203,8 @@ exit:
 
 static int
 YAAFCL_CheckArchive(const int argc,
-                   char** argv,
-                   const int flags)
+                    char** argv,
+                    const int flags)
 {
     (void) flags;
     int i = 0;
@@ -221,7 +223,7 @@ YAAFCL_CheckArchive(const int argc,
         result = YAAF_ArchiveCheck(p_archive);
         if (result == YAAF_FAIL)
         {
-             YAAFCL_LogError("[Check Archive] Archive corrupted \"%s\": %s\n", argv[i], YAAF_GetError());
+            YAAFCL_LogError("[Check Archive] Archive corrupted \"%s\": %s\n", argv[i], YAAF_GetError());
         }
 exit:
         if(p_archive)
@@ -323,7 +325,7 @@ YAAFCL_ExtractFile(const int argc,
     result = YAAF_SUCCESS;
     for (i = 2; i < argc && result == YAAF_SUCCESS; ++i)
     {
-        p_file = YAAF_ArchiveFile(p_archive, argv[i]);
+        p_file = YAAF_FileOpen(p_archive, argv[i]);
         if (p_file)
         {
             YAAFCL_Str out_path;
@@ -403,6 +405,75 @@ exit:
     return result;
 }
 
+static int
+YAAFCL_FileInfo(const int argc,
+                char** argv,
+                const int flags)
+{
+
+    int result = YAAF_FAIL;
+    YAAF_Archive* p_archive = NULL;
+    YAAF_FileInfo info;
+    int i = 0;
+
+    (void) flags;
+
+    if (argc < 2)
+    {
+        YAAFCL_LogError("[File Info] Usage: yaafcl -f [archive] [file 1] .. [file n]\n");
+        return YAAF_FAIL;
+    }
+
+    p_archive = YAAF_ArchiveOpen(argv[0]);
+    if (!p_archive)
+    {
+        YAAFCL_LogError("[File Info] Failed to parse archive \"%s\" - %s\n", argv[0], YAAF_GetError());
+        goto exit;
+    }
+
+    result = YAAF_SUCCESS;
+    for (i = 1; i < argc; ++i)
+    {
+        if (YAAF_ArchiveFileInfo(p_archive, argv[i], &info) == YAAF_SUCCESS)
+        {
+            struct tm* p_time = NULL;
+
+            printf("File: %s\n", argv[i]);
+        #if defined(YAAF_OS_WIN)
+            if (localtime_s(p_time, &info.lastModification) == 0)
+        #else
+            p_time = localtime(&info.lastModification);
+            if (p_time)
+        #endif
+            {
+                printf("    Last Modification Time: %04d/%02d/%02d %02d:%02d:%02d\n",
+                       (1900 + p_time->tm_year), (p_time->tm_mon + 1), p_time->tm_mday,
+                       p_time->tm_hour, p_time->tm_min, p_time->tm_sec);
+            }
+            else
+            {
+                printf("    Last Modification Time: --- \n");
+            }
+            printf("    Compressed Size   (KB): %.3f\n", (float)info.sizeCompressed / 1024.0f);
+            printf("    Uncompressed Size (KB): %.3f\n", (float)info.sizeUncompressed / 1024.0f);
+            printf("    Extra Data Size   (KB): %.3f\n", (float)info.extraSize / 1024.0f);
+        }
+        else
+        {
+            printf(" >> %08X\n", YAAF_Hash(argv[i], strlen(argv[i]), 0));
+            YAAFCL_LogError("[File Info] Failed to find file \"%s\"\n", argv[i]);
+        }
+    }
+
+exit:
+    if(p_archive)
+    {
+        YAAF_ArchiveClose(p_archive);
+    }
+    return result;
+}
+
+
 static void
 YAAFCL_PrintVersion()
 {
@@ -425,6 +496,7 @@ YAAFCL_PrintHelp()
     printf("  -c : Create archive with the files specified in [arguments]\n");
     printf("  -E : Extract [archive] into location specified in [arguments]\n");
     printf("  -e : Extract a file or directory from [archive]\n");
+    printf("  -f : Print file information for files in [arguments] from [archive]\n");
     printf("  -h : Print this text\n");
     printf("  -v : Print version\n");
     printf("\nswitches:\n");
@@ -475,6 +547,10 @@ YAAFCL_ParseArgs(const int argc,
     else if (strcmp(argv[i], "-C") == 0)
     {
         option = YAAFCL_OPTION_CHECK;
+    }
+    else if (strcmp(argv[i], "-f") == 0)
+    {
+        option = YAAFCL_OPTION_FILE_INFO;
     }
     else if(strcmp(argv[i], "-E") == 0)
     {
@@ -555,6 +631,8 @@ YAAFCL_ParseArgs(const int argc,
         return YAAFCL_CheckArchive(remaining_argc, argv + i, flags);
     case YAAFCL_OPTION_EXTRACT_PATH:
         return YAAFCL_ExtractFile(remaining_argc, argv +i, flags);
+    case YAAFCL_OPTION_FILE_INFO:
+        return YAAFCL_FileInfo(remaining_argc, argv + i, flags);
     default:
         fprintf(stderr,"%s - Option doesn't exist or is not implemented", argv[0]);
         return YAAF_FAIL;

@@ -49,6 +49,11 @@
  * mapped files. This way the OS's memory manager handles the data transfer,
  * resulting in less data copies, easier multi-threaded access and an
  * overall improved performance.
+ *
+ * @note: In the current version the file lookup is done in log2n time, by
+ * comparing the file name to the archive entries, which have been sorted
+ * before hand. Future work would include storing a hashmap with the archive
+ * to speed lookup.
  */
 
 /**
@@ -76,12 +81,17 @@ typedef struct YAAF_Allocator
  * YAAF_FileInfo holds information about a file in the archive. Currently we
  * provide information about the file's last modification date, its compressed
  * size and uncompressed size.
+ *
+ * If the file has extra information embedded, extra will have a pointer to
+ * the data and extraSize whill hold the size of the data.
  */
 typedef struct
 {
     time_t lastModification;
     uint32_t sizeCompressed;
     uint32_t sizeUncompressed;
+    const void* extra;
+    uint16_t extraSize;
 } YAAF_FileInfo;
 
 /**
@@ -168,13 +178,6 @@ YAAF_EXPORT const char** YAAF_CALL YAAF_ArchiveListDir(YAAF_Archive* pArchive,
 YAAF_EXPORT void YAAF_CALL YAAF_ArchiveFreeList(const char** pList);
 
 /**
- * Open a File stream for a file in the archive.
- * @return NULL if file was not found or on failure.
- */
-YAAF_EXPORT YAAF_File* YAAF_CALL YAAF_ArchiveFile(YAAF_Archive* pArchive,
-                                                  const char* filePath);
-
-/**
  * Retrieve information for a file in the archive.
  * @return YAAF_FAIL if the files was not found, YAAF_SUCCESS otherwise.
  */
@@ -206,6 +209,14 @@ YAAF_EXPORT int YAAF_CALL YAAF_ArchiveCheckFile(const YAAF_Archive* pArchive,
                                                 const char* file);
 
 /* YAAF File API */
+
+/**
+ * Open a File stream for a file in the archive.
+ * @return NULL if file was not found or on failure.
+ */
+YAAF_EXPORT YAAF_File* YAAF_CALL YAAF_FileOpen(YAAF_Archive* pArchive,
+                                               const char* filePath);
+
 /**
  * Read up to size bytes into pBuffer.
  * @return Number of bytes read from the file.

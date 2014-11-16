@@ -7,6 +7,51 @@ set(YAAF_VERSION_MAJOR 1)
 set(YAAF_VERSION_MINOR 0)
 set(YAAF_VERSION_PATCH 0)
 
+################################################################################
+# Header Tests
+################################################################################
+
+#check string functions
+check_include_files(strings.h YAAF_HAVE_STRINGS_H)
+if(${YAAF_HAVE_STRINGS_H})
+set(CMAKE_REQUIRED_INCLUDES string.h strings.h)
+else()
+set(CMAKE_REQUIRED_INCLUDES string.h)
+endif()
+check_function_exists(strcasecmp YAAF_HAVE_STRCASECMP)
+check_function_exists(_stricmp YAAF_HAVE_STRICMP)
+unset(CMAKE_REQUIRED_INCLUDES)
+
+# check dirent
+check_include_files(dirent.h YAAF_HAVE_DIRENT_H)
+
+#check inttypes
+check_include_files(inttypes.h YAAF_HAVE_INTTYPES_H)
+
+# check malloc.h
+check_include_files(malloc.h YAAF_HAVE_MALLOC_H)
+
+# check mmap.h
+check_include_files(sys/mman.h YAAF_HAVE_MMAN_H)
+
+# check pthread.h
+check_include_files(pthread.h YAAF_HAVE_PTHREAD_H)
+
+# check windows.h
+check_include_files(windows.h YAAF_HAVE_WINDOWS_H)
+
+# find threads
+if(UNIX)
+  set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+endif()
+
+# required for TLS
+find_package(Threads REQUIRED)
+
+################################################################################
+# Settings
+################################################################################
+
 set(CMAKE_C_FLAGS "${YAAF_C_WARNING_FLAGS} ${YAAF_C_COMPILE_FLAGS} ${YAFF_C_WERROR}")
 
 if(${YAAF_BUILD_SHARED_LIB})
