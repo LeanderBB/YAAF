@@ -14,12 +14,22 @@ mapped files. This way the OS's memory manager handles the data transfer,
 resulting in less data copies, easier multi-threaded access and an
 overall improved performance.
 
-Included with the source is a small tool **yaafcl** which can create, list,
-verify and extract YAAF archives.
+Additionally, the archive includes some form of self verification, in which
+it can verify the stored hashes againts its contents. This can be useful to
+test against data corruption.
+
+Included with the source is a small tool **yaafcl** which can create
+archives compatbile with libyaaf. Execute yaafcl -h for more information
+on the available options.
 
 The library is written in C99 standard. The current version of the library
 can be adapted to run under the c89 standard provided the default compression
 and hashing algorithm are replaced with c89 compatible code.
+
+Finally, the current version the file lookup is done in log2n time, by
+comparing the file name to the archive entries, which have been sorted
+before hand. Future work would include storing a hashmap within the archive
+to speed the lookup process.
 
 Building the code
 -----------------
@@ -37,8 +47,8 @@ Tested Platforms
 -----------------
 YAAF has currently been tested on:
 
- * Linux (x86_32, x86_64, arm (32bit) )
- * Mac os X (x86_64)
+ * Linux (x86_32, x86_64, arm_32 )
+ * Mac os X (x86_32, x86_64)
  * Windows (MSVC 2013 x86_32, x86_64)
 
 [CMake]: http://www.cmake.org/
