@@ -32,6 +32,10 @@
 #ifndef __YAAF_SETUP_H__
 #define __YAAF_SETUP_H__
 
+#if defined (__cplusplus)
+extern "C" {
+#endif
+
 #include "YAAF_Config.h"
 
 /* --- Version ------------------------------------------------------------- */
@@ -264,4 +268,7 @@ typedef int64_t YAAF_signed_size_t;
 typedef int32_t YAAF_signed_size_t;
 #endif
 
+#if defined (__cplusplus)
+}
+#endif
 #endif /* __YAAF_SETUP_H__ */

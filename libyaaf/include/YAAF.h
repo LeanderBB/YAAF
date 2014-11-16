@@ -56,6 +56,10 @@
  * to speed lookup.
  */
 
+#if defined (__cplusplus)
+extern "C" {
+#endif
+
 /**
  * This struct holds all the functions required to replace the default system
  * allocator used by YAAF.
@@ -256,5 +260,7 @@ YAAF_EXPORT uint32_t YAAF_CALL YAAF_FileSize(const YAAF_File* pFile);
  */
 YAAF_EXPORT void YAAF_CALL YAAF_FileDestroy(YAAF_File* pFile);
 
-
+#if defined (__cplusplus)
+}
+#endif
 #endif
