@@ -24,10 +24,10 @@ set(YAAF_LZ4_SRC
 )
 endif()
 
-set(YAAF_LZ4_LIBRARY lz4-xxhash-yaaf PARENT_SCOPE)
-add_library(lz4-xxhash-yaaf ${YAAF_LZ4_SRC})
+set(YAAF_LZ4_LIBRARY YAAF-lz4-xxhash PARENT_SCOPE)
+add_library(YAAF-lz4-xxhash ${YAAF_LZ4_SRC})
 
-install(TARGETS ${YAAF_LZ4_LIBRARY} DESTINATION lib)
+install(TARGETS YAAF-lz4-xxhash DESTINATION lib)
 
 endif()
 
