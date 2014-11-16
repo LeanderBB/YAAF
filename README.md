@@ -6,7 +6,7 @@ High Speed Rutime Decompression of compressed packed data.
 YAAF uses LZ4 to achieve high decompression speeds whilst sacrificing some
 compression rate. You can find more information on LZ4 here
 http://fastcompression.blogspot.de/p/lz4.html and
-ttps://code.google.com/p/lz4/.
+https://code.google.com/p/lz4/.
 
 Furthermore, YAAF use block based compression to allow for faster seek
 operations on the compressed data and the archive is accessed through memory
