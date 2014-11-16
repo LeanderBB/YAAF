@@ -247,6 +247,11 @@ YAAF_EXPORT int YAAF_CALL YAAF_FileEOF(const YAAF_File* pFile);
 YAAF_EXPORT uint32_t YAAF_CALL YAAF_FileTell(const YAAF_File* pFile);
 
 /**
+ * Get the file size
+ */
+YAAF_EXPORT uint32_t YAAF_CALL YAAF_FileSize(const YAAF_File* pFile);
+
+/**
  * Close the file stream.
  */
 YAAF_EXPORT void YAAF_CALL YAAF_FileDestroy(YAAF_File* pFile);

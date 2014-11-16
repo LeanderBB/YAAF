@@ -335,6 +335,12 @@ YAAF_FileTell(const YAAF_File* pFile)
     return pFile->nBytesDecoded;
 }
 
+uint32_t
+YAAF_FileSize(const YAAF_File* pFile)
+{
+    return pFile->nBytesUncompressed;
+}
+
 void
 YAAF_FileDestroy(YAAF_File* pFile)
 {
