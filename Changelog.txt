@@ -1,0 +1,11 @@
+#
+# YAAF - Yet Another Archive Format
+#
+#  YYYY/MM/DD - Version
+#
+
+2014/11/19 - 1.0.1
+    - Fixed an incorrect position in file reported by YAAF_FileTell()
+
+2014/11/16 - 1.0.0
+    - Official Release

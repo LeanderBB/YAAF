@@ -179,7 +179,7 @@ int YAAFCL_JobCompress(FILE* pOutput,
     manifest.magic = YAAF_LITTLE_E32(YAAF_MANIFEST_MAGIC);
     manifest.versionBuilt = YAAF_LITTLE_E16(YAAF_VERSION);
     /* TODO: Add different specs */
-    manifest.versionRequired = YAAF_LITTLE_E16(YAAF_VERSION);
+    manifest.versionRequired = YAAF_LITTLE_E16(YAAF_VERSION_MK(1,0,0));
     manifest.nEntries = YAAF_LITTLE_E32(pFiles->count);
 
     if (!pFiles->count)

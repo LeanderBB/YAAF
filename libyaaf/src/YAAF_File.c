@@ -190,6 +190,7 @@ YAAF_FileRead(YAAF_File* pFile,
         }
         bytes_written += size_to_copy;
         pFile->cacheOffset += size_to_copy;
+        pFile->nBytesTell += size_to_copy;
     }
     return bytes_written;
 }
@@ -242,6 +243,7 @@ YAAF_FileSeekSet(YAAF_File* pFile,
             {
                 pFile->nBytesDecoded += pFile->cacheSize;
                 pFile->cacheOffset = skip_bytes;
+                pFile->nBytesTell = offset;
             }
         }
         else
@@ -273,6 +275,7 @@ YAAF_FileSeek(YAAF_File* pFile,
             pFile->nBytesDecoded = pFile->nBytesUncompressed;
             pFile->cacheSize = 0;
             pFile->cacheOffset = 0;
+            pFile->nBytesTell = pFile->nBytesUncompressed;
             return YAAF_SUCCESS;
         }
 
@@ -286,6 +289,7 @@ YAAF_FileSeek(YAAF_File* pFile,
             if ( new_offset >= 0)
             {
                 pFile->cacheOffset = new_offset;
+                pFile->nBytesTell = new_offset;
             }
             else
             {
@@ -300,6 +304,7 @@ YAAF_FileSeek(YAAF_File* pFile,
             if ((int)(pFile->cacheSize - pFile->cacheOffset) < offset )
             {
                 pFile->cacheOffset += (uint32_t) offset;
+                pFile->nBytesTell += offset;
             }
             else
             {
@@ -315,6 +320,7 @@ YAAF_FileSeek(YAAF_File* pFile,
         pFile->nBytesDecoded = pFile->nBytesUncompressed;
         pFile->cacheOffset = 0;
         pFile->cacheSize = 0;
+        pFile->nBytesTell += offset;
         return YAAF_SUCCESS;
     default:
         return YAAF_FAIL;
@@ -332,7 +338,7 @@ YAAF_FileEOF(const YAAF_File* pFile)
 uint32_t
 YAAF_FileTell(const YAAF_File* pFile)
 {
-    return pFile->nBytesDecoded;
+    return pFile->nBytesTell;
 }
 
 uint32_t

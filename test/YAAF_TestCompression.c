@@ -252,6 +252,14 @@ Test_CompressFile(const char* path)
             goto cleanup;
         }
 
+        /* test seek & recorded ftell */
+        if (random_seek != YAAF_FileTell(p_yfile))
+        {
+            fprintf(stderr," Seek position and internal tell do not match (%d vs %d)\n", random_seek,
+                YAAF_FileTell(p_yfile));
+            goto cleanup;
+        }
+        
         /* read into tmp in */
         if (fread(tmp_in, 1, input_size, p_file) != input_size)
         {

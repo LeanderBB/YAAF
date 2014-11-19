@@ -42,10 +42,11 @@ extern "C" {
 
 #define YAAF_VERSION_MAJOR 1
 #define YAAF_VERSION_MINOR 0
-#define YAAF_VERSION_PATCH 0
+#define YAAF_VERSION_PATCH 1
 
-#define YAAF_VERSION (YAAF_VERSION_MAJOR * 100 * 100) + (YAAF_VERSION_MINOR * 100) + \
-  YAAF_VERSION_PATCH
+#define YAAF_VERSION_MK(MA,MI, REV) (MA * 100 * 100) + (MI * 100) + REV
+#define YAAF_VERSION YAAF_VERSION_MK(YAAF_VERSION_MAJOR,YAAF_VERSION_MINOR,\
+  YAAF_VERSION_PATCH)
 
 
 /* --- Host OS ------------------------------------------------------------- */

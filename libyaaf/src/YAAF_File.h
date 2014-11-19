@@ -41,15 +41,16 @@ struct YAAF_ManifestEntry;
 struct YAAF_File
 {
   const void* ptr;
+  const void* cachePtr;
   uint32_t cacheOffset;
   uint32_t cacheSize;
   uint32_t nBytesRead;
   uint32_t nBytesDecoded;
   uint32_t nBytesUncompressed;
   uint32_t nBytesCompressed;
-  char cacheBlock[YAAF_BLOCK_CACHE_SIZE_RD];
-  const void* cachePtr;
+  uint32_t nBytesTell;
   YAAF_Decompressor decompressor;
+  char cacheBlock[YAAF_BLOCK_CACHE_SIZE_RD];
 };
 
 YAAF_File* YAAF_FileCreate(const void* ptr,
