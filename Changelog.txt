@@ -4,6 +4,10 @@
 #  YYYY/MM/DD - Version
 #
 
+2015/01/02 - 1.0.2
+    - Added minimal support for building on Android NDK.
+      Tested with standalone toolchain only.
+
 2014/11/19 - 1.0.1
     - Fixed an incorrect position in file reported by YAAF_FileTell()
 
