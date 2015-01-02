@@ -45,6 +45,11 @@ set(YAAF_C_COMPILE_FLAGS_DEBUG "-g -O0 -fno-inline -DYAAF_DEBUG")
 
 set(YAAF_C_COMPILE_FLAGS_RELEASE "-O3 -g")
 
+# Set android flags by setting ANDROID=1 and ANDROID_C_FLAGS
+if(ANDROID)
+    set(YAAF_C_COMPILE_FLAGS "${YAAF_C_COMPILE_FLAGS} ${ANDROID_C_FLAGS}")
+endif()
+
 else()
 
 add_definitions( "/D WIN32" "/D _WINDOWS")
