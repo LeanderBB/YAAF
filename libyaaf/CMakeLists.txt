@@ -95,6 +95,7 @@ set(YAAF_INTERNAL_HDR
   src/YAAF_Compression_lz4.h
   src/YAAF_Hash.h
   src/YAAF_Hash_xxhash.h
+  src/YAAF_HashMap.h
 )
 
 
@@ -107,6 +108,7 @@ set(YAAF_SRC
   src/YAAF_Compression.c
   src/YAAF_Compression_lz4.c
   src/YAAF_Hash_xxhash.c
+  src/YAAF_HashMap.c
 )
 
 add_definitions("-DYAAF_BUILDING_LIBRARY")
