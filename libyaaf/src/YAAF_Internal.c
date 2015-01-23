@@ -154,6 +154,8 @@ YAAF_TimeToArchiveTime(const time_t time,
 {
     struct tm* p_time = NULL;
 #if defined(YAAF_OS_WIN)
+    struct tm win_time;
+    p_time = &win_time;
     if (localtime_s(p_time, &time) == 0)
 #else
     p_time = localtime(&time);

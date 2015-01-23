@@ -19,12 +19,19 @@
  * - YAAF source repository : http://www.github.com/LeanderBB/YAAF
  */
 
+/* disable warnings about fopen_s */
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "YAAFCL.h"
 #include "YAAFCL_DirUtils.h"
 #include "YAAFCL_Job.h"
 #include <stdarg.h>
 #include <time.h>
 #include <YAAF_Hash.h>
+
+
 
 static int g_AllowErrorLog = 1;
 

@@ -18,6 +18,12 @@
  * You can contact the author at :
  * - YAAF source repository : http://www.github.com/LeanderBB/YAAF
  */
+
+/* disable warnings about fopen_s */
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "YAAFCL_Job.h"
 #include "YAAF_Compression.h"
 #include "YAAF_Hash.h"

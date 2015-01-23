@@ -36,6 +36,7 @@
 #include <dirent.h>
 #elif defined(YAAF_OS_WIN)
 #include "win_dirent.h"
+#include <direct.h>
 #else
 #error Could not find dirent.h
 #endif
