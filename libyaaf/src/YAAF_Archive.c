@@ -36,8 +36,7 @@
 
 
 /* Aux functions */
-int YAAF_ArchiveParse(YAAF_Archive* pArchive,
-                      const char* path);
+int YAAF_ArchiveParse(YAAF_Archive* pArchive);
 
 uint32_t YAAF_ArchiveLocateFile(const YAAF_Archive* pArchive,
                                 const char* file);
@@ -66,11 +65,48 @@ YAAF_ArchiveOpen(const char* path)
         p_archive = (YAAF_Archive*) YAAF_calloc(1,sizeof(YAAF_Archive));
         p_archive->pManifest = NULL;
         YAAF_HashMapInitNoAlloc(&p_archive->entries);
-        if (YAAF_ArchiveParse(p_archive, path))
+
+        if (YAAF_MemFileOpen(&p_archive->memFile, path) == YAAF_FAIL)
+        {
+            return NULL;
+        }
+
+        if (YAAF_ArchiveParse(p_archive))
         {
             YAAF_ArchiveClose(p_archive);
             p_archive = NULL;
         }
+    }
+    return p_archive;
+}
+
+YAAF_Archive*
+YAAF_ArchiveOpenInMemory(const void* ptr,
+                         const size_t size,
+                         const int freeOnClose)
+{
+    YAAF_Archive* p_archive = NULL;
+    if (ptr && size)
+    {
+        p_archive = (YAAF_Archive*) YAAF_calloc(1,sizeof(YAAF_Archive));
+        p_archive->pManifest = NULL;
+        YAAF_HashMapInitNoAlloc(&p_archive->entries);
+
+        if (YAAF_MemFileFromMemory(&p_archive->memFile, ptr,
+                                   size, (freeOnClose) ? YAAF_MEMFILE_CLOSE_FREE : YAAF_MEMFILE_CLOSE_WTHFREE) == YAAF_FAIL)
+        {
+            return NULL;
+        }
+
+        if (YAAF_ArchiveParse(p_archive))
+        {
+            YAAF_ArchiveClose(p_archive);
+            p_archive = NULL;
+        }
+    }
+    else
+    {
+        YAAF_SetError("ArchiveOpenInMemory with null ptr or 0 size");
     }
     return p_archive;
 }
@@ -180,22 +216,13 @@ YAAF_ArchiveContains(const YAAF_Archive* pArchive,
 }
 
 int
-YAAF_ArchiveParse(YAAF_Archive* pArchive,
-                  const char* path)
+YAAF_ArchiveParse(YAAF_Archive* pArchive)
 {
-    (void) path;
     size_t manifest_offset = 0;
     size_t entries_offset = 0;
     size_t cur_offset = 0;
     const void* tmp_ptr = NULL;
     uint32_t i;
-
-
-    if (YAAF_MemFileOpen(&pArchive->memFile, path) == YAAF_FAIL)
-    {
-        return YAAF_FAIL;
-    }
-
 
     manifest_offset = pArchive->memFile.size - sizeof(YAAF_Manifest);
     pArchive->pManifest = ( const YAAF_Manifest*) YAAF_PTR_OFFSET(pArchive->memFile.ptr, manifest_offset);

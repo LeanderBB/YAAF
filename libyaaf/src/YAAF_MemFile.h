@@ -34,10 +34,18 @@
 
 #include "YAAF.h"
 
+typedef enum
+{
+    YAAF_MEMFILE_CLOSE_FILE,
+    YAAF_MEMFILE_CLOSE_FREE,
+    YAAF_MEMFILE_CLOSE_WTHFREE
+}YAAF_MemFileCloseOp;
+
 typedef struct YAAF_MemFile
 {
     const void * ptr;
     size_t size;
+    YAAF_MemFileCloseOp closeop;
 #if defined(YAAF_OS_UNIX)
     int oshdl;
 #elif defined(YAAF_OS_WIN)
@@ -51,6 +59,11 @@ typedef struct YAAF_MemFile
 
 int YAAF_MemFileOpen(YAAF_MemFile* pFile,
                      const char* path);
+
+int YAAF_MemFileFromMemory(YAAF_MemFile* pFile,
+                           const void* ptr,
+                           const size_t size,
+                           const YAAF_MemFileCloseOp closeop);
 
 int YAAF_MemFileClose(YAAF_MemFile* pFile);
 

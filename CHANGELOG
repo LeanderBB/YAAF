@@ -10,6 +10,8 @@
     - Fixed version checking when loading an archive from an incompatible
       version.
     - Corrected constness of YAAF_ArchiveList and YAAF_ArchiveListDir
+    - Added YAAF_ArchiveOpenInMemory to open an archive already loaded into
+      memory.
 
 2015/01/02 - 1.0.2
     - Added minimal support for building on Android NDK.

@@ -143,6 +143,12 @@ YAAF_EXPORT int YAAF_CALL YAAF_Init(const YAAF_Allocator* pAlloc);
 YAAF_EXPORT void YAAF_CALL YAAF_Shutdown();
 
 /**
+ * Get the current allocator in use by YAAF.
+ * @note This is set when calling YAAF_Init().
+ */
+YAAF_EXPORT const YAAF_Allocator* YAAF_GetAllocator();
+
+/**
  * Get the current error message. The error message is stored locally to each.
  * Use this call to get more information about a failure in the YAAF API.
  * @return Error message or NULL when no error message is available.
@@ -156,6 +162,20 @@ YAAF_EXPORT const char* YAAF_CALL YAAF_GetError();
  * @return NULL on failure, otherwise a pointer to the loaded archive.
  */
 YAAF_EXPORT YAAF_Archive* YAAF_CALL YAAF_ArchiveOpen(const char* path);
+
+/**
+ * Open an archive already loaded into memory.
+ * @param freeOnClose Set to 1 if YAAF can free ptr when a call to
+ * YAAF_CloseArchive is made, 0 otherwise.
+ * @return NULL on failure, otherwise a pointer to the loaded archive.
+ *
+ * @note IMPORTANT: If you wish that YAAF frees memory allocated for ptr,
+ * be sure that it is allocated with the same allocator in use by YAAF.
+ * Use YAAF_GetAllocator() to retrieve the allocator if necessary.
+ */
+YAAF_EXPORT YAAF_Archive* YAAF_CALL YAAF_ArchiveOpenInMemory(const void* ptr,
+                                                             const size_t size,
+                                                             const int freeOnClose);
 
 /**
  * Close an archive and free all resources associated to it.

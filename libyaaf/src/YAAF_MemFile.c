@@ -47,7 +47,7 @@ YAAF_MemFileOpen(YAAF_MemFile* pFile,
     int result = YAAF_FAIL;
     size_t file_size = 0;
     int handle = -1;
-
+    pFile->closeop = YAAF_MEMFILE_CLOSE_FILE;
     if (YAAF_GetFileSize(&file_size, path) == YAAF_SUCCESS)
     {
         int file_flags  = O_RDONLY;
@@ -90,10 +90,14 @@ YAAF_MemFileOpen(YAAF_MemFile* pFile,
 int
 YAAF_MemFileClose(YAAF_MemFile* pFile)
 {
-    if (pFile->ptr)
+    if (pFile->ptr && pFile->closeop == YAAF_MEMFILE_CLOSE_FILE)
     {
         munmap((void*)pFile->ptr, pFile->size);
         close(pFile->oshdl);
+    }
+    if (pFile->ptr && pFile->closeop == YAAF_MEMFILE_CLOSE_FREE)
+    {
+        YAAF_free((void*)pFile->ptr);
     }
     return YAAF_SUCCESS;
 }
@@ -105,14 +109,15 @@ int
 YAAF_MemFileOpen(YAAF_MemFile* pFile,
                  const char* path)
 {
-	int result = YAAF_FAIL;
-	size_t file_size = 0;
+    int result = YAAF_FAIL;
+    size_t file_size = 0;
+    pFile->closeop = YAAF_MEMFILE_CLOSE_FILE;
     HANDLE handle_file = (HANDLE)HFILE_ERROR;
     HANDLE handle_mem = NULL;
     OFSTRUCT of;
 
-	if (YAAF_GetFileSize(&file_size, path) == YAAF_SUCCESS)
-	{
+    if (YAAF_GetFileSize(&file_size, path) == YAAF_SUCCESS)
+    {
         handle_file = (HANDLE) OpenFile(path, &of, OF_READ);
         if (handle_file == (HANDLE)HFILE_ERROR)
         {
@@ -142,14 +147,14 @@ YAAF_MemFileOpen(YAAF_MemFile* pFile,
                 }
             }
         }
-	}
-	else
-	{
-		YAAF_SetError("[YAAF MemFile] Could not get file size for request file");
-	}
+    }
+    else
+    {
+        YAAF_SetError("[YAAF MemFile] Could not get file size for request file");
+    }
 
-	if (result == YAAF_FAIL)
-	{
+    if (result == YAAF_FAIL)
+    {
         if (handle_mem)
         {
             CloseHandle(handle_mem);
@@ -158,16 +163,16 @@ YAAF_MemFileOpen(YAAF_MemFile* pFile,
         {
             CloseHandle(handle_file);
         }
-	}
+    }
 
-	return result;
+    return result;
 }
 
 int
 YAAF_MemFileClose(YAAF_MemFile* pFile)
 {
-	if (pFile->ptr)
-	{
+    if (pFile->ptr && pFile->closeop == YAAF_MEMFILE_CLOSE_FILE)
+    {
         if (UnmapViewOfFile(pFile->ptr) == 0)
         {
             YAAF_SetError("[YAAF MemFile] Could not unmap file");
@@ -175,11 +180,27 @@ YAAF_MemFileClose(YAAF_MemFile* pFile)
         }
         CloseHandle(pFile->memhdl);
         CloseHandle(pFile->oshdl);
-	}
-	return YAAF_SUCCESS;
+    }
+    if (pFile->ptr && pFile->closeop == YAAF_MEMFILE_CLOSE_FREE)
+    {
+        YAAF_free((void*)pFile->ptr);
+    }
+    return YAAF_SUCCESS;
 }
 
 #else
 #error "No Implementation for memory mapped file for current platform"
 #endif
 
+int
+YAAF_MemFileFromMemory(YAAF_MemFile* pFile,
+                       const void* ptr,
+                       const size_t size,
+                       const YAAF_MemFileCloseOp closeop)
+{
+    pFile->ptr = ptr;
+    pFile->size = size;
+    pFile->oshdl = 0;
+    pFile->closeop = closeop;
+    return YAAF_SUCCESS;
+}

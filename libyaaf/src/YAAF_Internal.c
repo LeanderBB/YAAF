@@ -81,6 +81,12 @@ YAAF_Shutdown()
     YAAF_TLSDestroy(YAAF_gErrorTLS);
 }
 
+const YAAF_Allocator*
+YAAF_GetAllocator()
+{
+    return &YAAF_gpAllocator;
+}
+
 void*
 YAAF_malloc(size_t size)
 {
