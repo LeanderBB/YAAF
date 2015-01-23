@@ -36,6 +36,7 @@
 
 
 struct YAAF_HashMapEntry;
+typedef struct YAAF_HashMapEntry YAAF_HashMapEntry;
 
 /**
  * Implementation of an Open Addresing HashMap for YAAF.
@@ -48,7 +49,7 @@ struct YAAF_HashMapEntry;
  */
 typedef struct
 {
-    struct YAAF_HashMapEntry* pEntries;
+    YAAF_HashMapEntry* pEntries;
     uint32_t count;
     uint32_t capacity;
 } YAAF_HashMap;
@@ -56,6 +57,8 @@ typedef struct
 
 void YAAF_HashMapInit(YAAF_HashMap*  pHashMap,
                       const uint32_t initialCount);
+
+void YAAF_HashMapInitNoAlloc(YAAF_HashMap* pHashMap);
 
 void YAAF_HashMapDestroy(YAAF_HashMap* pHashMap);
 
@@ -66,9 +69,21 @@ int YAAF_HashMapPut(YAAF_HashMap* pHashMap,
                     const char*   key,
                     const void*   pData);
 
+int YAAF_HashMapPutWithHash(YAAF_HashMap*  pHashMap,
+                            const uint32_t hash,
+                            const void*    pData);
+
 int YAAF_HashMapRemove(YAAF_HashMap* pHashMap,
                        const char*   key);
 
+const YAAF_HashMapEntry* YAAF_HashMapItBegin(const YAAF_HashMap* pHashMap);
+
+void YAAF_HashMapItNext(const YAAF_HashMap*     pHashMap,
+                        const YAAF_HashMapEntry **pIter);
+
+const YAAF_HashMapEntry* YAAF_HashMapItEnd(const YAAF_HashMap* pHashMap);
+
+const void* YAAF_HashMapItGet(const YAAF_HashMapEntry *pIter);
 
 
 #endif

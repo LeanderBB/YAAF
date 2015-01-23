@@ -108,6 +108,7 @@ set(YAAF_SRC
   src/YAAF_Compression.c
   src/YAAF_Compression_lz4.c
   src/YAAF_Hash_xxhash.c
+  src/YAAF_Hash.c
   src/YAAF_HashMap.c
 )
 

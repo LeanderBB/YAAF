@@ -104,6 +104,49 @@ test_get()
     return res;
 }
 
+YAAF_INLINE static int
+is_in_data(const int v)
+{
+    int i;
+    for(i = 0; i < DATA_COUNT; ++i)
+    {
+        if (g_data[i] == v)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int
+test_iter()
+{
+    YAAF_HashMap hm;
+    int i, res = YAAF_SUCCESS;
+    YAAF_HashMapInit(&hm, 1);
+
+    for (i = 0; i < DATA_COUNT && res == YAAF_SUCCESS; ++i)
+    {
+        res = YAAF_HashMapPut(&hm, g_keys[i], &g_data[i]);
+    }
+
+    if (res != YAAF_FAIL)
+    {
+        const YAAF_HashMapEntry* it, *it_end;
+        it_end = YAAF_HashMapItEnd(&hm);
+        for (it = YAAF_HashMapItBegin(&hm);
+             it != it_end && res == YAAF_SUCCESS;
+             YAAF_HashMapItNext(&hm, &it))
+        {
+            const int* ptr = (const int*) YAAF_HashMapItGet(it);
+
+            res = (is_in_data(*ptr)) ? YAAF_SUCCESS : YAAF_FAIL;
+        }
+    }
+    YAAF_HashMapDestroy(&hm);
+    return res;
+}
+
 int main()
 {
     int exit_status = EXIT_FAILURE;
@@ -117,6 +160,12 @@ int main()
     }
 
     if (test_get() != YAAF_SUCCESS)
+    {
+        fprintf(stderr, "test_get() failed\n");
+        goto exit;
+    }
+
+    if (test_iter() != YAAF_SUCCESS)
     {
         fprintf(stderr, "test_get() failed\n");
         goto exit;

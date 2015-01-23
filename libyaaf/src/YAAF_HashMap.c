@@ -31,34 +31,13 @@
  */
 #include "YAAF_HashMap.h"
 #include "YAAF_Internal.h"
-#include <ctype.h>
+#include "YAAF_Hash.h"
+
 struct YAAF_HashMapEntry
 {
     const void* pData;
     uint32_t hash;
 };
-typedef struct YAAF_HashMapEntry YAAF_HashMapEntry;
-
-/* One At a Time Hash, designed by Bob Jenkins,
-   tailored for case insenstive strings */
-
-static uint32_t
-YAAF_OnceAtATimeHashNoCase(const char* str)
-{
-    uint32_t hash = 0;
-
-    for(;*str; ++str)
-    {
-        hash += tolower(*str);
-        hash += (hash << 10);
-        hash ^= (hash >> 6);
-    }
-    hash += (hash << 3);
-    hash ^= (hash >> 11);
-    hash += (hash << 15);
-
-    return hash;
-}
 
 void
 YAAF_HashMapInit(YAAF_HashMap* pHashMap,
@@ -68,14 +47,25 @@ YAAF_HashMapInit(YAAF_HashMap* pHashMap,
     pHashMap->count = 0;
     /* Use 0.75 load factor */
     pHashMap->capacity = initialCount * 4/3;
-    pHashMap->pEntries = (YAAF_HashMapEntry*)YAAF_calloc(1, sizeof(YAAF_HashMapEntry));
+    pHashMap->pEntries = (YAAF_HashMapEntry*)YAAF_calloc(pHashMap->capacity, sizeof(YAAF_HashMapEntry));
+}
+
+void
+YAAF_HashMapInitNoAlloc(YAAF_HashMap* pHashMap)
+{
+    pHashMap->count = 0;
+    pHashMap->capacity = 0;
+    pHashMap->pEntries = NULL;
 }
 
 void
 YAAF_HashMapDestroy(YAAF_HashMap* pHashMap)
 {
-    YAAF_free(pHashMap->pEntries);
-    pHashMap->pEntries = NULL;
+    if (pHashMap->pEntries)
+    {
+        YAAF_free(pHashMap->pEntries);
+        pHashMap->pEntries = NULL;
+    }
     pHashMap->capacity = 0;
     pHashMap->count = 0;
 }
@@ -189,11 +179,17 @@ YAAF_HashMapPut(YAAF_HashMap* pHashMap,
                 const char* key,
                 const void* pData)
 {
+    uint32_t hash = YAAF_OnceAtATimeHashNoCase(key);
+    return YAAF_HashMapPutWithHash(pHashMap, hash, pData);
+}
 
+int YAAF_HashMapPutWithHash(YAAF_HashMap*  pHashMap,
+                            const uint32_t hash,
+                            const void*    pData)
+{
     uint32_t i = 0;
     YAAF_HashMapEntry* new_entry = NULL;
     uint32_t idx = 0;
-    uint32_t hash = 0;
 
     /* Reize if necessary, also checks against overflow */
     if(YAAF_HashMapResizeIfNecessary(pHashMap) == YAAF_FAIL)
@@ -201,12 +197,11 @@ YAAF_HashMapPut(YAAF_HashMap* pHashMap,
         return YAAF_FAIL;
     }
 
-    hash = YAAF_OnceAtATimeHashNoCase(key);
     for(i = 0; i < pHashMap->capacity; ++i)
     {
         /* get index */
         idx = YAAF_HashMapCalculateIdx(hash, i, pHashMap->capacity);
-        new_entry = &pHashMap->pEntries[idx];
+        new_entry = &(pHashMap->pEntries[idx]);
         /* insert new element if the location is empty */
         if (!new_entry->pData)
         {
@@ -245,4 +240,60 @@ YAAF_HashMapRemove(YAAF_HashMap* pHashMap,
     }
 
     return YAAF_FAIL;
+}
+
+const YAAF_HashMapEntry*
+YAAF_HashMapItBegin(const YAAF_HashMap* pHashMap)
+{
+    const YAAF_HashMapEntry* ptr, *ptr_end;
+    YAAF_ASSERT(pHashMap->pEntries);
+
+    ptr= pHashMap->pEntries;
+    ptr_end = pHashMap->pEntries + pHashMap->capacity;
+
+    while(ptr < ptr_end)
+    {
+        if (ptr->pData)
+        {
+            return ptr;
+        }
+    }
+    return ptr_end;
+}
+
+void
+YAAF_HashMapItNext(const YAAF_HashMap* pHashMap,
+                   const YAAF_HashMapEntry** pIter)
+{
+    const YAAF_HashMapEntry* ptr_end;
+    const YAAF_HashMapEntry* ptr;
+    YAAF_ASSERT(pIter && *pIter);
+    YAAF_ASSERT(pHashMap->pEntries);
+
+    ptr = *pIter;
+    ptr_end = pHashMap->pEntries + pHashMap->capacity;
+    ++ptr;
+    while(ptr < ptr_end)
+    {
+        if (ptr->pData)
+        {
+            *pIter = ptr;
+            return;
+        }
+        ++ptr;
+    }
+    *pIter = ptr_end;
+}
+
+const YAAF_HashMapEntry*
+YAAF_HashMapItEnd(const YAAF_HashMap* pHashMap)
+{
+    YAAF_ASSERT(pHashMap->pEntries);
+    return pHashMap->pEntries + pHashMap->capacity;
+}
+
+const void*
+YAAF_HashMapItGet(const YAAF_HashMapEntry* pIter)
+{
+    return (pIter) ? pIter->pData : NULL;
 }

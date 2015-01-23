@@ -268,7 +268,7 @@ YAAFCL_AddFileToEntryStack(YAAFCL_DirEntryStack* pStack,
 
     p_dir_entry->manifestInfo.extraLen = 0;
     p_dir_entry->manifestInfo.nameLen = (uint16_t)p_dir_entry->archivePath.len + 1;
-    p_dir_entry->manifestInfo.nameHash = YAAF_Hash(p_dir_entry->archivePath.str, p_dir_entry->archivePath.len, 0);
+    p_dir_entry->manifestInfo.nameHash = YAAF_OnceAtATimeHashNoCase(p_dir_entry->archivePath.str);
 
     YAAFCL_DirEntryStackPush(pStack, p_dir_entry);
     return YAAF_SUCCESS;

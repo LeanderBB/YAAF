@@ -32,8 +32,6 @@
 
 #include "YAAF_Archive.h"
 #include "YAAF_File.h"
-#include "YAAF_Internal.h"
-#include "YAAF_MemFile.h"
 #include "YAAF_Hash.h"
 
 
@@ -65,10 +63,9 @@ YAAF_ArchiveOpen(const char* path)
     YAAF_Archive* p_archive = NULL;
     if (path)
     {
-        p_archive = (YAAF_Archive*) YAAF_calloc(1, sizeof(YAAF_Archive));
-        p_archive->pEntries = NULL;
+        p_archive = (YAAF_Archive*) YAAF_calloc(1,sizeof(YAAF_Archive));
         p_archive->pManifest = NULL;
-
+        YAAF_HashMapInitNoAlloc(&p_archive->entries);
         if (YAAF_ArchiveParse(p_archive, path))
         {
             YAAF_ArchiveClose(p_archive);
@@ -83,25 +80,26 @@ YAAF_ArchiveClose(YAAF_Archive* pArchive)
 {
     if (pArchive)
     {
-        if (pArchive->pEntries)
-        {
-            YAAF_free((void*)pArchive->pEntries);
-        }
+        YAAF_HashMapDestroy(&pArchive->entries);
         YAAF_MemFileClose(&pArchive->memFile);
         YAAF_free(pArchive);
     }
 }
 
 const char**
-YAAF_ArchiveListAll(YAAF_Archive* pArchive)
+YAAF_ArchiveListAll(const YAAF_Archive* pArchive)
 {
     const char ** p_result = (const char**)YAAF_malloc(sizeof(char*) * (pArchive->pManifest->nEntries + 1));
     if (p_result)
     {
-        size_t i;
-        for (i = 0; i < pArchive->pManifest->nEntries; ++i)
+        const YAAF_HashMapEntry* it, *it_end;
+        uint32_t i = 0;
+        it_end = YAAF_HashMapItEnd(&pArchive->entries);
+        for(it = YAAF_HashMapItBegin(&pArchive->entries);
+            it != it_end; YAAF_HashMapItNext(&pArchive->entries, &it), ++i)
         {
-            p_result[i] = YAAF_ManifestEntryName(pArchive->pEntries[i]);
+            const YAAF_ManifestEntry* p_manifest_entry = (const YAAF_ManifestEntry*) YAAF_HashMapItGet(it);
+            p_result[i] = YAAF_ManifestEntryName(p_manifest_entry);
         }
         p_result[i] = NULL;
     }
@@ -113,18 +111,25 @@ YAAF_ArchiveListAll(YAAF_Archive* pArchive)
 }
 
 const char**
-YAAF_ArchiveListDir(YAAF_Archive* pArchive, const char* dir)
+YAAF_ArchiveListDir(const YAAF_Archive* pArchive,
+                    const char* dir)
 {
     const char ** p_result = (const char**)YAAF_malloc(sizeof(char*) * (pArchive->pManifest->nEntries + 1));
     size_t dir_len = strlen(dir);
     if (p_result)
     {
-        size_t i, result_i = 0;
+        const YAAF_HashMapEntry* it, *it_end;
+        uint32_t result_i = 0;
+        it_end = YAAF_HashMapItEnd(&pArchive->entries);
+
         if (strcmp(dir,".") != 0)
         {
-            for (i = 0; i < pArchive->pManifest->nEntries; ++i)
+            for(it = YAAF_HashMapItBegin(&pArchive->entries);
+                it != it_end; YAAF_HashMapItNext(&pArchive->entries, &it))
             {
-                const char* entry_name = YAAF_ManifestEntryName(pArchive->pEntries[i]);
+                const YAAF_ManifestEntry* p_manifest_entry = (const YAAF_ManifestEntry*) YAAF_HashMapItGet(it);
+                const char* entry_name = YAAF_ManifestEntryName(p_manifest_entry);
+
                 if (strncmp(entry_name, dir, dir_len) == 0 &&
                         (entry_name[dir_len] == YAAF_ARCHIVE_SEP_CHR || dir[dir_len - 1] == YAAF_ARCHIVE_SEP_CHR))
                 {
@@ -135,9 +140,12 @@ YAAF_ArchiveListDir(YAAF_Archive* pArchive, const char* dir)
         }
         else
         {
-            for (i = 0; i < pArchive->pManifest->nEntries; ++i)
+            for(it = YAAF_HashMapItBegin(&pArchive->entries);
+                it != it_end; YAAF_HashMapItNext(&pArchive->entries, &it))
             {
-                const char* entry_name = YAAF_ManifestEntryName(pArchive->pEntries[i]);
+                const YAAF_ManifestEntry* p_manifest_entry = (const YAAF_ManifestEntry*) YAAF_HashMapItGet(it);
+                const char* entry_name = YAAF_ManifestEntryName(p_manifest_entry);
+
                 if (!YAAF_StrContainsChr(entry_name, YAAF_ARCHIVE_SEP_CHR))
                 {
                     p_result[result_i] = entry_name;
@@ -164,10 +172,11 @@ YAAF_ArchiveFreeList(const char** pList)
 }
 
 int
-YAAF_ArchiveContains(const YAAF_Archive* pArchive, const char* file)
+YAAF_ArchiveContains(const YAAF_Archive* pArchive,
+                     const char* file)
 {
     YAAF_ASSERT(pArchive);
-    return YAAF_ArchiveLocateFile(pArchive,file) == YAAF_ARCHIVE_FILE_NOT_FOUND ? YAAF_SUCCESS : YAAF_FAIL;
+    return YAAF_HashMapGet(&pArchive->entries,file) != NULL ? YAAF_SUCCESS : YAAF_FAIL;
 }
 
 int
@@ -199,7 +208,7 @@ YAAF_ArchiveParse(YAAF_Archive* pArchive,
     }
 
     /* Check version */
-    if (YAAF_VERSION < pArchive->pManifest->versionRequired)
+    if (YAAF_LAST_VALID_VERSION > pArchive->pManifest->versionRequired)
     {
         YAAF_SetError("Current version is not compatible with the archive");
         return YAAF_FAIL;
@@ -216,7 +225,7 @@ YAAF_ArchiveParse(YAAF_Archive* pArchive,
         return YAAF_FAIL;
     }
 
-    pArchive->pEntries = YAAF_malloc(sizeof(void*) * pArchive->pManifest->nEntries);
+    YAAF_HashMapInit(&pArchive->entries, pArchive->pManifest->nEntries);
 
     /* Validate entries */
     for (i = 0; i < pArchive->pManifest->nEntries; ++i)
@@ -238,7 +247,12 @@ YAAF_ArchiveParse(YAAF_Archive* pArchive,
         }
 
         /* register entry */
-        pArchive->pEntries[i] = pManifEntry;
+
+        if (YAAF_HashMapPutWithHash(&pArchive->entries, pManifEntry->nameHash, pManifEntry) != YAAF_SUCCESS)
+        {
+            YAAF_SetError("Could not insert archive entry into lookup map");
+            return YAAF_FAIL;
+        }
 
         /* calculate offset for the next entry */
         cur_offset += sizeof(struct YAAF_ManifestEntry) + pManifEntry->nameLen +
@@ -249,71 +263,34 @@ YAAF_ArchiveParse(YAAF_Archive* pArchive,
     return YAAF_SUCCESS;
 }
 
-uint32_t
-YAAF_ArchiveLocateFile(const YAAF_Archive* pArchive, const char* file)
-{
-    uint32_t start = 0, curr = 0, end = pArchive->pManifest->nEntries;
-    const char* p_entry_name;
-    while (end - start >= 1)
-    {
-        curr = start + ((end - start) / 2);
-        p_entry_name = YAAF_ManifestEntryName(pArchive->pEntries[curr]);
-        int cmp = YAAF_StrCompareNoCase(file, p_entry_name);
-        if (cmp < 0)
-        {
-            /* search right */
-            end = curr;
-        }
-        else if (cmp > 0)
-        {
-            /* search left */
-            start = curr + 1;
-        }
-        else
-        {
-            /* found the file */
-            return curr;
-        }
-    }
-    return YAAF_ARCHIVE_FILE_NOT_FOUND;
-}
-
 YAAF_File*
 YAAF_FileOpen(YAAF_Archive* pArchive,
               const char* filePath)
 {
 
-    uint32_t index;
-
-
-    /* locate file in archive */
-    index = YAAF_ArchiveLocateFile(pArchive, filePath);
-    if (index == YAAF_ARCHIVE_FILE_NOT_FOUND)
-    {
-        return NULL;
-    }
-
-    /* Open the file */
-
-    return  YAAF_FileCreate(pArchive->memFile.ptr, pArchive->pEntries[index]);
-}
-
-int
-YAAF_ArchiveFileInfo(YAAF_Archive* pArchive, const char* filePath,
-                     YAAF_FileInfo* pInfo)
-{
-    uint32_t index = YAAF_ARCHIVE_FILE_NOT_FOUND;
     const YAAF_ManifestEntry* p_entry = NULL;
 
     /* locate file in archive */
-    index = YAAF_ArchiveLocateFile(pArchive, filePath);
-    if (index == YAAF_ARCHIVE_FILE_NOT_FOUND)
+    p_entry = YAAF_HashMapGet(&pArchive->entries, filePath);
+    /* Open the file */
+    return  (p_entry) ? YAAF_FileCreate(pArchive->memFile.ptr, p_entry): NULL;
+}
+
+int
+YAAF_ArchiveFileInfo(YAAF_Archive* pArchive,
+                     const char* filePath,
+                     YAAF_FileInfo* pInfo)
+{
+    const YAAF_ManifestEntry* p_entry = NULL;
+
+    /* locate file in archive */
+    p_entry = YAAF_HashMapGet(&pArchive->entries, filePath);
+    if (!p_entry)
     {
         return YAAF_FAIL;
     }
 
     /* copy info */
-    p_entry = pArchive->pEntries[index];
     pInfo->lastModification = YAAF_ArchiveTimeToTime(&p_entry->lastModDateTime);
     pInfo->sizeCompressed = p_entry->sizeCompressed;
     pInfo->sizeUncompressed = p_entry->sizeUncompressed;
@@ -426,11 +403,15 @@ int
 YAAF_ArchiveCheck(const YAAF_Archive* pArchive)
 {
     int result = YAAF_SUCCESS;
-    uint32_t i = 0;
+    const YAAF_HashMapEntry* it, *it_end;
 
-    for (i = 0; i < pArchive->pManifest->nEntries && result == YAAF_SUCCESS; ++i)
+    it_end = YAAF_HashMapItEnd(&pArchive->entries);
+
+    for(it = YAAF_HashMapItBegin(&pArchive->entries);
+        it != it_end && result == YAAF_SUCCESS;
+        YAAF_HashMapItNext(&pArchive->entries, &it))
     {
-        result = YAAF_ArchiveCheckEntry(pArchive, pArchive->pEntries[i]);
+        result = YAAF_ArchiveCheckEntry(pArchive, YAAF_HashMapItGet(it));
     }
     return result;
 }
@@ -440,11 +421,11 @@ YAAF_ArchiveCheckFile(const YAAF_Archive* pArchive,
                       const char* file)
 {
     int result = YAAF_FAIL;
-    uint32_t file_loc = YAAF_ArchiveLocateFile(pArchive,file);
+    const YAAF_ManifestEntry* p_entry = YAAF_HashMapGet(&pArchive->entries, file);
 
-    if (file_loc != YAAF_ARCHIVE_FILE_NOT_FOUND)
+    if (p_entry)
     {
-        result = YAAF_ArchiveCheckEntry(pArchive, pArchive->pEntries[file_loc]);
+        result = YAAF_ArchiveCheckEntry(pArchive, p_entry);
     }
     return result;
 }

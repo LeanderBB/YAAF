@@ -4,6 +4,13 @@
 #  YYYY/MM/DD - Version
 #
 
+2015/01/23 - 1.1.0
+    - Switched form binary search to hashmap lookup in order to find files
+      in the archive faster.
+    - Fixed version checking when loading an archive from an incompatible
+      version.
+    - Corrected constness of YAAF_ArchiveList and YAAF_ArchiveListDir
+
 2015/01/02 - 1.0.2
     - Added minimal support for building on Android NDK.
       Tested with standalone toolchain only.

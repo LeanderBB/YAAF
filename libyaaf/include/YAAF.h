@@ -167,14 +167,14 @@ YAAF_EXPORT void YAAF_CALL YAAF_ArchiveClose(YAAF_Archive* pArchive);
  * @return An array of string pointers with the last entry being a NULL ptr. Be
  * sure to free this allocated list with YAAF_ArchiveFreeList();
  */
-YAAF_EXPORT const char** YAAF_CALL YAAF_ArchiveListAll(YAAF_Archive* pArchive);
+YAAF_EXPORT const char** YAAF_CALL YAAF_ArchiveListAll(const YAAF_Archive* pArchive);
 
 /**
  * List a directory in the archive.
  *  * @return An array of string pointers with the last entry being a NULL ptr. Be
  * sure to free this allocated list with YAAF_ArchiveFreeList();
  */
-YAAF_EXPORT const char** YAAF_CALL YAAF_ArchiveListDir(YAAF_Archive* pArchive,
+YAAF_EXPORT const char** YAAF_CALL YAAF_ArchiveListDir(const YAAF_Archive* pArchive,
                                                        const char* dir);
 /**
  * Free a list allocated by the YAAF_ArchiveList* functions.

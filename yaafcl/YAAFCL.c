@@ -173,7 +173,7 @@ YAAFCL_ListArchive(const int argc,
         p_archive = YAAF_ArchiveOpen(argv[i]);
         if (!p_archive)
         {
-            YAAFCL_LogError("[List Archive] Failed to parse archive \"%s\"\n", argv[i]);
+            YAAFCL_LogError("[List Archive] Failed to parse archive \"%s\" - %s\n", argv[0], YAAF_GetError());
             goto exit;
         }
 
@@ -255,7 +255,7 @@ YAAFCL_ListArchiveDir(const int argc,
     p_archive = YAAF_ArchiveOpen(argv[0]);
     if (!p_archive)
     {
-        YAAFCL_LogError("[List ArchiveDir] Failed to parse archive \"%s\"\n", argv[0]);
+        YAAFCL_LogError("[List ArchiveDir] Failed to parse archive \"%s\" - %s\n", argv[0], YAAF_GetError());
         goto exit;
     }
     for ( i = 1; i < argc; ++ i)
@@ -460,7 +460,6 @@ YAAFCL_FileInfo(const int argc,
         }
         else
         {
-            printf(" >> %08X\n", YAAF_Hash(argv[i], strlen(argv[i]), 0));
             YAAFCL_LogError("[File Info] Failed to find file \"%s\"\n", argv[i]);
         }
     }
@@ -473,6 +472,44 @@ exit:
     return result;
 }
 
+static int
+YAAFCL_Contains(const int argc,
+                char** argv,
+                const int flags)
+{
+
+    int result = YAAF_FAIL;
+    YAAF_Archive* p_archive = NULL;
+    int i = 0;
+
+    (void) flags;
+
+    if (argc < 2)
+    {
+        YAAFCL_LogError("[Contains] Usage: yaafcl -f [archive] [file 1] .. [file n]\n");
+        return YAAF_FAIL;
+    }
+
+    p_archive = YAAF_ArchiveOpen(argv[0]);
+    if (!p_archive)
+    {
+        YAAFCL_LogError("[Contains] Failed to parse archive \"%s\" - %s\n", argv[0], YAAF_GetError());
+        goto exit;
+    }
+
+    result = YAAF_SUCCESS;
+    for (i = 1; i < argc; ++i)
+    {
+        printf("%s: '%s' \n", (YAAF_ArchiveContains(p_archive, argv[i]) == YAAF_SUCCESS ? "Found    " : "Not Found"), argv[i]);
+    }
+
+exit:
+    if(p_archive)
+    {
+        YAAF_ArchiveClose(p_archive);
+    }
+    return result;
+}
 
 static void
 YAAFCL_PrintVersion()
@@ -494,6 +531,8 @@ YAAFCL_PrintHelp()
     printf("  -l : List directories specified in [arguments] in the archive\n");
     printf("  -L : List all contents of the [archive]\n");
     printf("  -c : Create archive with the files specified in [arguments]\n");
+    printf("  -C : Check the archive integrity of the [archive]\n");
+    printf("  -k : Check wether the files in [arguments] exist in [archive]\n");
     printf("  -E : Extract [archive] into location specified in [arguments]\n");
     printf("  -e : Extract a file or directory from [archive]\n");
     printf("  -f : Print file information for files in [arguments] from [archive]\n");
@@ -546,11 +585,15 @@ YAAFCL_ParseArgs(const int argc,
     }
     else if (strcmp(argv[i], "-C") == 0)
     {
-        option = YAAFCL_OPTION_CHECK;
+        option = YAAFCL_OPTION_CHECK_ARCHIVE_INTEGRITY;
     }
     else if (strcmp(argv[i], "-f") == 0)
     {
         option = YAAFCL_OPTION_FILE_INFO;
+    }
+    else if (strcmp(argv[i], "-k") == 0)
+    {
+        option = YAAFCL_OPTION_CONTAINS;
     }
     else if(strcmp(argv[i], "-E") == 0)
     {
@@ -627,12 +670,14 @@ YAAFCL_ParseArgs(const int argc,
         return YAAFCL_CreateArchiveFromPaths(remaining_argc, argv + i, flags);
     case YAAFCL_OPTION_EXTRACT_ARCHIVE:
         return YAAFCL_ExtractArchive(remaining_argc, argv + i, flags);
-    case YAAFCL_OPTION_CHECK:
+    case YAAFCL_OPTION_CHECK_ARCHIVE_INTEGRITY:
         return YAAFCL_CheckArchive(remaining_argc, argv + i, flags);
     case YAAFCL_OPTION_EXTRACT_PATH:
         return YAAFCL_ExtractFile(remaining_argc, argv +i, flags);
     case YAAFCL_OPTION_FILE_INFO:
         return YAAFCL_FileInfo(remaining_argc, argv + i, flags);
+    case YAAFCL_OPTION_CONTAINS:
+        return YAAFCL_Contains(remaining_argc, argv + i, flags);
     default:
         fprintf(stderr,"%s - Option doesn't exist or is not implemented", argv[0]);
         return YAAF_FAIL;

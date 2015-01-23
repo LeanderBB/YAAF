@@ -41,13 +41,15 @@ extern "C" {
 /* --- Version ------------------------------------------------------------- */
 
 #define YAAF_VERSION_MAJOR 1
-#define YAAF_VERSION_MINOR 0
-#define YAAF_VERSION_PATCH 1
+#define YAAF_VERSION_MINOR 1
+#define YAAF_VERSION_PATCH 0
 
 #define YAAF_VERSION_MK(MA,MI, REV) (MA * 100 * 100) + (MI * 100) + REV
 #define YAAF_VERSION YAAF_VERSION_MK(YAAF_VERSION_MAJOR,YAAF_VERSION_MINOR,\
   YAAF_VERSION_PATCH)
 
+/* Indicates the oldest archive version this version can open */
+#define YAAF_LAST_VALID_VERSION YAAF_VERSION_MK(1,1,0)
 
 /* --- Host OS ------------------------------------------------------------- */
 

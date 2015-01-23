@@ -29,30 +29,26 @@
  * You can contact the author at :
  * - YAAF source repository : http://www.github.com/LeanderBB/YAAF
  */
-#ifndef __YAAF_HASH_H__
-#define __YAAF_HASH_H__
 
-#include "YAAF_Setup.h"
-#if defined(YAAF_USE_HASH_XXHASH)
-#include "YAAF_Hash_xxhash.h"
-#else
-#error No hashing algorithm defined
-#endif
+#include "YAAF_Hash.h"
+#include <ctype.h>
 
-void YAAF_HashStateReset(YAAF_HashState_t* pState,
-                         const uint32_t seed);
+/* One At a Time Hash (http://www.burtleburtle.net/bob/hash/doobs.html)
+   tailored for case insenstive strings */
+uint32_t
+YAAF_OnceAtATimeHashNoCase(const char* str)
+{
+    uint32_t hash = 0;
 
-int YAAF_HashStateUpdate(YAAF_HashState_t* pState,
-                         const void* input,
-                         const uint32_t size);
+    for(;*str; ++str)
+    {
+        hash += tolower(*str);
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
 
-uint32_t YAAF_HashStateDigest(YAAF_HashState_t* pState);
-
-uint32_t YAAF_Hash(const void* input,
-                   const uint32_t size,
-                   const uint32_t seed);
-
-uint32_t YAAF_OnceAtATimeHashNoCase(const char* str);
-
-
-#endif
+    return hash;
+}
