@@ -8,7 +8,8 @@
     - Optimized HashMap deletion with the use of a marker for deleted 
       positions.
     - Updated license headers.
-    
+    - Updated LZ4 to r127.
+
 2015/01/23 - 1.1.0
     - Switched form binary search to hashmap lookup in order to find files
       in the archive faster.
