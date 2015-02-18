@@ -521,8 +521,8 @@ exit:
 static void
 YAAFCL_PrintVersion()
 {
-    printf("Copyright (c) 2014 - Leander Beernaert\n");
-    printf("yaafcl %d.%d.%d (with yaaf %d.%d.%d) \n",
+    printf("Copyright (C) 2014-2015, Leander Beernaert\n");
+    printf("yaafcl %d.%d.%d (with libyaaf %d.%d.%d) \n",
            YAAFCL_VERSION_MAJOR, YAAFCL_VERSION_MINOR, YAAFCL_VERSION_PATCH,
            YAAF_VERSION_MAJOR, YAAF_VERSION_MINOR, YAAF_VERSION_PATCH);
     printf("\n");

@@ -4,6 +4,11 @@
 #  YYYY/MM/DD - Version
 #
 
+2015/02/18 - 1.1.1
+    - Optimized HashMap deletion with the use of a marker for deleted 
+      positions.
+    - Updated license headers.
+    
 2015/01/23 - 1.1.0
     - Switched form binary search to hashmap lookup in order to find files
       in the archive faster.

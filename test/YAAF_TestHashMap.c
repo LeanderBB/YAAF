@@ -44,21 +44,18 @@ static const char* g_keys[DATA_COUNT] =
 };
 
 static int
-test_put_remove()
+test_put_remove_hm(YAAF_HashMap* hm)
 {
-    YAAF_HashMap hm;
     int i, res = YAAF_SUCCESS;
-    YAAF_HashMapInit(&hm, 1);
-
     for (i = 0; i < DATA_COUNT && res == YAAF_SUCCESS; ++i)
     {
-        res = YAAF_HashMapPut(&hm, g_keys[i], &g_data[i]);
+        res = YAAF_HashMapPut(hm, g_keys[i], &g_data[i]);
     }
 
     for (i = 0; i < DATA_COUNT && res == YAAF_SUCCESS; ++i)
     {
         int idx = DATA_COUNT - (i + 1);
-        res = YAAF_HashMapRemove(&hm, g_keys[idx]);
+        res = YAAF_HashMapRemove(hm, g_keys[idx]);
 
         /* duplicate key  must fail since it has been removed already*/
         if (idx == DUPLICATE_KEY_IDX)
@@ -66,11 +63,35 @@ test_put_remove()
             res = (res == YAAF_FAIL) ? YAAF_SUCCESS : YAAF_FAIL;
         }
     }
+    return res;
+}
 
+static int
+test_put_remove()
+{
+    YAAF_HashMap hm;
+    int res = YAAF_FAIL;
+    YAAF_HashMapInit(&hm, 1);
+    res = test_put_remove_hm(&hm);
     YAAF_HashMapDestroy(&hm);
     return res;
 }
 
+
+static int
+test_put_remove_put_remove()
+{
+    YAAF_HashMap hm;
+    int res = YAAF_FAIL;
+    YAAF_HashMapInit(&hm, 1);
+    res = test_put_remove_hm(&hm);
+    if (res == YAAF_SUCCESS)
+    {
+        res = test_put_remove_hm(&hm);
+    }
+    YAAF_HashMapDestroy(&hm);
+    return res;
+}
 
 static int
 test_get()
@@ -156,6 +177,12 @@ int main()
     if (test_put_remove() != YAAF_SUCCESS)
     {
         fprintf(stderr, "test_put_remove() failed\n");
+        goto exit;
+    }
+
+    if (test_put_remove_put_remove() != YAAF_SUCCESS)
+    {
+        fprintf(stderr, "test_put_remove_put_remove() failed\n");
         goto exit;
     }
 

@@ -1,6 +1,6 @@
 /*
  * YAAF - Yet Another Archive Format
- * Copyright (C) 2014, Leander Beernaert
+ * Copyright (C) 2014-2015, Leander Beernaert
  * BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
  *
  * Redistribution and use in source and binary forms, with or without

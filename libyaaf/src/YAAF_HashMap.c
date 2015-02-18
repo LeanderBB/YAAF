@@ -1,6 +1,6 @@
 /*
  * YAAF - Yet Another Archive Format
- * Copyright (C) 2014, Leander Beernaert
+ * Copyright (C) 2014-2015, Leander Beernaert
  * BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,9 @@
 #include "YAAF_HashMap.h"
 #include "YAAF_Internal.h"
 #include "YAAF_Hash.h"
+
+/* us the address of the pointer of the hashmap structure as an empty value*/
+#define YAAF_HASHMAP_ENTRY_DELETED(hashmap) ((void*)(hashmap))
 
 struct YAAF_HashMapEntry
 {
@@ -90,7 +93,21 @@ YAAF_HashMapFindEntry(const YAAF_HashMap* pHashMap,
     for(i = 0; i < pHashMap->capacity; ++i)
     {
         hk =  YAAF_HashMapCalculateIdx(hash, i, pHashMap->capacity);
-        if (pHashMap->pEntries[hk].pData)
+        YAAF_HashMapEntry* p_cur_entry = &pHashMap->pEntries[hk];
+
+        if (!p_cur_entry->pData)
+        {
+            /* No key found when data is NULL. exit loop */
+            break;
+        }
+
+        if (p_cur_entry->pData == YAAF_HASHMAP_ENTRY_DELETED(pHashMap))
+        {
+            /* Element was deleted, find next element */
+            continue;
+        }
+
+        if (p_cur_entry->pData)
         {
             /* check if the hashes match */
             if (pHashMap->pEntries[hk].hash == hash)
@@ -143,7 +160,7 @@ YAAF_HashMapResizeIfNecessary(YAAF_HashMap* pHashMap)
         for (i = 0; i < pHashMap->capacity; i++)
         {
             YAAF_HashMapEntry* cur_entry = &pHashMap->pEntries[i];
-            if (cur_entry->pData != NULL)
+            if (cur_entry->pData != NULL && cur_entry->pData != YAAF_HASHMAP_ENTRY_DELETED(pHashMap))
             {
                 uint32_t j=0;
                 YAAF_HashMapEntry* new_entry = NULL;
@@ -203,7 +220,7 @@ int YAAF_HashMapPutWithHash(YAAF_HashMap*  pHashMap,
         idx = YAAF_HashMapCalculateIdx(hash, i, pHashMap->capacity);
         new_entry = &(pHashMap->pEntries[idx]);
         /* insert new element if the location is empty */
-        if (!new_entry->pData)
+        if (!new_entry->pData || new_entry->pData == YAAF_HASHMAP_ENTRY_DELETED(pHashMap))
         {
             new_entry->pData = pData;
             new_entry->hash = hash;
@@ -234,7 +251,7 @@ YAAF_HashMapRemove(YAAF_HashMap* pHashMap,
     if (p_entry)
     {
         p_entry->hash = 0;
-        p_entry->pData = NULL;
+        p_entry->pData = YAAF_HASHMAP_ENTRY_DELETED(pHashMap);
         pHashMap->count--;
         return YAAF_SUCCESS;
     }
@@ -275,7 +292,7 @@ YAAF_HashMapItNext(const YAAF_HashMap* pHashMap,
     ++ptr;
     while(ptr < ptr_end)
     {
-        if (ptr->pData)
+        if (ptr->pData && ptr->pData != YAAF_HASHMAP_ENTRY_DELETED(pHashMap))
         {
             *pIter = ptr;
             return;
