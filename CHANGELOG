@@ -4,6 +4,10 @@
 #  YYYY/MM/DD - Version
 #
 
+2015/03/01 - 1.1.2
+    
+    - Fixed HashMap Iterator begin infinite loop.
+
 2015/02/18 - 1.1.1
     - Optimized HashMap deletion with the use of a marker for deleted 
       positions.

@@ -270,10 +270,11 @@ YAAF_HashMapItBegin(const YAAF_HashMap* pHashMap)
 
     while(ptr < ptr_end)
     {
-        if (ptr->pData)
+        if (ptr->pData && ptr->pData != YAAF_HASHMAP_ENTRY_DELETED(pHashMap))
         {
             return ptr;
         }
+        ++ptr;
     }
     return ptr_end;
 }
