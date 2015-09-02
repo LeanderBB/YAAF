@@ -4,8 +4,8 @@
 
 set(YAAF_LIB_NAME YAAF)
 set(YAAF_VERSION_MAJOR 1)
-set(YAAF_VERSION_MINOR 0)
-set(YAAF_VERSION_PATCH 0)
+set(YAAF_VERSION_MINOR 1)
+set(YAAF_VERSION_PATCH 3)
 
 ################################################################################
 # Header Tests

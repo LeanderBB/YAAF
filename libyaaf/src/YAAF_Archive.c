@@ -275,7 +275,10 @@ YAAF_ArchiveParse(YAAF_Archive* pArchive)
 
         /* register entry */
 
-        if (YAAF_HashMapPutWithHash(&pArchive->entries, pManifEntry->nameHash, pManifEntry) != YAAF_SUCCESS)
+        if (YAAF_HashMapPutWithHash(&pArchive->entries,
+                                    pManifEntry->nameHash,
+                                    YAAF_ManifestEntryName(pManifEntry),
+                                    pManifEntry) != YAAF_SUCCESS)
         {
             YAAF_SetError("Could not insert archive entry into lookup map");
             return YAAF_FAIL;

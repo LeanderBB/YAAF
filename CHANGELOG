@@ -4,6 +4,11 @@
 #  YYYY/MM/DD - Version
 #
 
+2015/09/02 - 1.1.3
+
+    - Fixed  HashMap hash collision. The key's value is now also
+    compared with the stored key's value.
+
 2015/03/01 - 1.1.2
     
     - Fixed HashMap Iterator begin infinite loop.

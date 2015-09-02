@@ -47,6 +47,7 @@ typedef struct YAAF_HashMapEntry YAAF_HashMapEntry;
  * The capacity of the hashmap is maitained at 75% capacity to
  * increase the efficiency of linear probing method.
  */
+
 typedef struct
 {
     YAAF_HashMapEntry* pEntries;
@@ -71,6 +72,7 @@ int YAAF_HashMapPut(YAAF_HashMap* pHashMap,
 
 int YAAF_HashMapPutWithHash(YAAF_HashMap*  pHashMap,
                             const uint32_t hash,
+                            const char*    key,
                             const void*    pData);
 
 int YAAF_HashMapRemove(YAAF_HashMap* pHashMap,

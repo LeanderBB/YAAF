@@ -39,6 +39,7 @@
 struct YAAF_HashMapEntry
 {
     const void* pData;
+    const char* key;
     uint32_t hash;
 };
 
@@ -84,6 +85,7 @@ YAAF_HashMapCalculateIdx(const uint32_t hash,
 
 static YAAF_HashMapEntry*
 YAAF_HashMapFindEntry(const YAAF_HashMap* pHashMap,
+                      const char* key,
                       const uint32_t hash)
 {
     uint32_t hk = 0;
@@ -110,7 +112,8 @@ YAAF_HashMapFindEntry(const YAAF_HashMap* pHashMap,
         if (p_cur_entry->pData)
         {
             /* check if the hashes match */
-            if (pHashMap->pEntries[hk].hash == hash)
+            if (p_cur_entry->hash == hash
+                    && YAAF_StrCompareNoCase(key, p_cur_entry->key) == 0)
             {
                 p_result = &pHashMap->pEntries[hk];
                 break;
@@ -128,7 +131,7 @@ YAAF_HashMapGet(const YAAF_HashMap* pHashMap,
     uint32_t hash = YAAF_OnceAtATimeHashNoCase(key);
     YAAF_HashMapEntry* p_entry = NULL;
 
-    p_entry = YAAF_HashMapFindEntry(pHashMap, hash);
+    p_entry = YAAF_HashMapFindEntry(pHashMap, key, hash);
     return (p_entry) ? p_entry->pData : NULL;
 }
 
@@ -173,6 +176,7 @@ YAAF_HashMapResizeIfNecessary(YAAF_HashMap* pHashMap)
                     /* insert new element if the location is empty */
                     if (!new_entry->pData)
                     {
+                        new_entry->key = cur_entry->key;
                         new_entry->pData = cur_entry->pData;
                         new_entry->hash = cur_entry->hash;
                         break;
@@ -197,11 +201,12 @@ YAAF_HashMapPut(YAAF_HashMap* pHashMap,
                 const void* pData)
 {
     uint32_t hash = YAAF_OnceAtATimeHashNoCase(key);
-    return YAAF_HashMapPutWithHash(pHashMap, hash, pData);
+    return YAAF_HashMapPutWithHash(pHashMap, hash, key, pData);
 }
 
 int YAAF_HashMapPutWithHash(YAAF_HashMap*  pHashMap,
                             const uint32_t hash,
+                            const char*    key,
                             const void*    pData)
 {
     uint32_t i = 0;
@@ -223,6 +228,7 @@ int YAAF_HashMapPutWithHash(YAAF_HashMap*  pHashMap,
         if (!new_entry->pData || new_entry->pData == YAAF_HASHMAP_ENTRY_DELETED(pHashMap))
         {
             new_entry->pData = pData;
+            new_entry->key = key;
             new_entry->hash = hash;
             pHashMap->count++;
             return YAAF_SUCCESS;
@@ -246,11 +252,12 @@ YAAF_HashMapRemove(YAAF_HashMap* pHashMap,
 {
     YAAF_HashMapEntry* p_entry = NULL;
     uint32_t hash = YAAF_OnceAtATimeHashNoCase(key);
-    p_entry = YAAF_HashMapFindEntry(pHashMap, hash);
+    p_entry = YAAF_HashMapFindEntry(pHashMap, key, hash);
 
     if (p_entry)
     {
         p_entry->hash = 0;
+        p_entry->key = NULL;
         p_entry->pData = YAAF_HASHMAP_ENTRY_DELETED(pHashMap);
         pHashMap->count--;
         return YAAF_SUCCESS;
