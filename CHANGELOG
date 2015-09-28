@@ -4,6 +4,10 @@
 #  YYYY/MM/DD - Version
 #
 
+2015/09/28 - 1.1.4
+ 
+    - New: Upgrade LZ4 to r131
+
 2015/09/02 - 1.1.3
 
     - Fixed  HashMap hash collision. The key's value is now also
